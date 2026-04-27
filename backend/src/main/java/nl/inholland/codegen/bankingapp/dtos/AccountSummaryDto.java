@@ -5,5 +5,4 @@ public class AccountSummaryDto {
     public String iban;
     public String accountType;
     public int balanceCents;
-    public String currency;
 }
