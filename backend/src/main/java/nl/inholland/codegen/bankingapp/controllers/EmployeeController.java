@@ -49,10 +49,5 @@ public class EmployeeController {
             @RequestBody UpdateAccountRequestDto request) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
-
-    @PostMapping("/transactions")
-    @Operation(summary = "Transfer funds between two accounts", description = "Employee-initiated transfer between two customer accounts")
-    public ResponseEntity<TransactionDto> transfer(@RequestBody TransferRequestDto request) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-    }
+    
 }
