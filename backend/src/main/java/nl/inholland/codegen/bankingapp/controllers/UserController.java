@@ -1,7 +1,5 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
-import java.util.List;
-
 import nl.inholland.codegen.bankingapp.dtos.*;
 import nl.inholland.codegen.bankingapp.utils.PaginatedList;
 import org.springframework.http.HttpStatus;
@@ -16,10 +14,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class UserController {
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
-    public ResponseEntity<List<CustomerLookupResponse>> searchCustomers(
+    public ResponseEntity<PaginatedList<CustomerLookupResponse>> searchCustomers(
             @RequestParam(required = false) String iban,
             @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName) {
+            @RequestParam(required = false) String lastName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

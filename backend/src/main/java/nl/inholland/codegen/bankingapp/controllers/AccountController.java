@@ -1,7 +1,5 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import nl.inholland.codegen.bankingapp.dtos.*;
+import nl.inholland.codegen.bankingapp.utils.PaginatedList;
 
 @RestController
 @RequestMapping("/accounts")
@@ -22,10 +21,12 @@ import nl.inholland.codegen.bankingapp.dtos.*;
 public class AccountController {
     @GetMapping
     @Operation(summary = "List customer savings and checking accounts", description = "Returns all accounts for the authenticated user, or can be used to search for other users. Employees can view all accounts.")
-    public ResponseEntity<List<AccountSummaryResponse>> listAllAccounts(
+    public ResponseEntity<PaginatedList<AccountSummaryResponse>> listAllAccounts(
             @RequestParam(required = false) String iban,
             @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName) {
+            @RequestParam(required = false) String lastName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
