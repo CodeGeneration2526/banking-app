@@ -1,0 +1,50 @@
+package nl.inholland.codegen.bankingapp.models;
+
+import jakarta.persistence.*;
+import java.util.Date;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Table(name = "accounts")
+@Getter
+@Setter
+public class Account {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long accountId;
+
+    @Column(nullable = false, unique = true)
+    private Long accountNumber;
+
+    @Enumerated(EnumType.STRING)
+    private AccountType type;
+
+    @Column(nullable = false)
+    private Long storedAmountInCents;
+
+    @Column(nullable = false)
+    private Long dailyLimitInCents;
+
+    @Column(nullable = false)
+    private Long absoluteLimitInCents;
+
+    @Column(nullable = false)
+    private Date creationDate;
+
+    @Column(nullable = false, unique = true)
+    private String iban;
+
+//    Implement once User models is done
+//    @ManyToOne
+//    private User owner;
+
+    enum AccountType {
+
+        CHECKING,
+        SAVINGS,
+        ATM
+    }
+}
+
