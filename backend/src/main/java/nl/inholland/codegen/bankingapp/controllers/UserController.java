@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
+@RequestMapping("/users")
 @Tag(name = "User", description = "User account and transaction endpoints")
 public class UserController {
     @GetMapping("/search")
@@ -23,17 +24,35 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @GetMapping("/approvals")
-    @Operation(summary = "Get accounts pending approval", description = "Returns all user accounts with the status PENDING.")
-    public ResponseEntity<PaginatedList<ApprovalResponse>> getApprovalAccounts(
+    @GetMapping
+    @Operation(summary = "Get all users", description = "Returns all user accounts.")
+    public ResponseEntity<PaginatedList<UserResponse>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
-    @PostMapping("/approvals")
+    @GetMapping("{userId}")
+    @Operation(summary = "Get one user", description = "Returns a list of all users.")
+    public ResponseEntity<UserResponse> getUser() {
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    }
+
+    @PostMapping
     @Operation(summary = "Approve customer and create accounts", description = "Creates a checking and savings account for the given customer")
-    public ResponseEntity<Void> createAccounts(@RequestBody CreateAccountRequest request) {
+    public ResponseEntity<Void> createAccounts(@RequestBody AccountCreationRequest request) {
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    }
+
+    @PatchMapping("{userId}")
+    @Operation(summary = "Update specific user", description = "Update values for a specific user.")
+    public ResponseEntity<Void> updateUser(@RequestBody UserPatchRequest request) {
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    }
+
+    @DeleteMapping("{userId}")
+    @Operation(summary = "Delete specific user", description = "Deletes a specific user, archiving their account.")
+    public ResponseEntity<Void> deleteUser() {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 }

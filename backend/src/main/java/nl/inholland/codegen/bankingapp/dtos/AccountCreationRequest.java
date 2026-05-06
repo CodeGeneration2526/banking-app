@@ -1,6 +1,6 @@
 package nl.inholland.codegen.bankingapp.dtos;
 
-public record CreateAccountRequest (
+public record AccountCreationRequest (
      long userId,
      long absoluteLimitInCents,
      long dailyLimitInCents)

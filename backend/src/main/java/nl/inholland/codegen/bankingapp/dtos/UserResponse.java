@@ -2,7 +2,7 @@ package nl.inholland.codegen.bankingapp.dtos;
 
 import java.util.Date;
 
-public record ApprovalResponse (
+public record UserResponse(
     long userId,
     String firstName,
     String lastName,
