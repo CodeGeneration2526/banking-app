@@ -14,20 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @Tag(name = "User", description = "User account and transaction endpoints")
 public class UserController {
-
-    @GetMapping("/accounts")
-    @Operation(summary = "List customer accounts", description = "Returns all accounts for the authenticated customer.")
-    public ResponseEntity<List<AccountSummaryResponse>> listAllAccounts() {
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @GetMapping("/accounts/{accountId}")
-    @Operation(summary = "Get account details", description = "Returns details for a single customer account.")
-    public ResponseEntity<AccountDetailResponse> getAccountInfo(
-            @PathVariable long accountId) {
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
     public ResponseEntity<List<CustomerLookupResponse>> searchCustomers(
@@ -40,22 +26,14 @@ public class UserController {
     @GetMapping("/approvals")
     @Operation(summary = "Get accounts pending approval", description = "Returns all user accounts with the status PENDING.")
     public ResponseEntity<PaginatedList<ApprovalResponse>> getApprovalAccounts(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue =  "10") int pageSize) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
     @PostMapping("/approvals")
     @Operation(summary = "Approve customer and create accounts", description = "Creates a checking and savings account for the given customer")
     public ResponseEntity<Void> createAccounts(@RequestBody CreateAccountRequest request) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-    }
-
-    @PatchMapping("/accounts/{id}")
-    @Operation(summary = "Update specific account", description = "Updates the absolute limit, daily limit, or closed status of an account")
-    public ResponseEntity<AccountDetailResponse> updateAccount(
-        @PathVariable long id,
-        @RequestBody UpdateAccountRequest request) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 }
