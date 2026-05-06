@@ -17,20 +17,20 @@ public class UserController {
 
     @GetMapping("/accounts")
     @Operation(summary = "List customer accounts", description = "Returns all accounts for the authenticated customer.")
-    public ResponseEntity<List<AccountSummaryDto>> listAllAccounts() {
+    public ResponseEntity<List<AccountSummaryResponse>> listAllAccounts() {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @GetMapping("/accounts/{accountId}")
     @Operation(summary = "Get account details", description = "Returns details for a single customer account.")
-    public ResponseEntity<AccountDetailDto> getAccountInfo(
+    public ResponseEntity<AccountDetailResponse> getAccountInfo(
             @PathVariable long accountId) {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
-    public ResponseEntity<List<CustomerLookupDto>> searchCustomers(
+    public ResponseEntity<List<CustomerLookupResponse>> searchCustomers(
             @RequestParam(required = false) String iban,
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName) {
@@ -39,7 +39,7 @@ public class UserController {
 
     @GetMapping("/approvals")
     @Operation(summary = "Get accounts pending approval", description = "Returns all user accounts with the status PENDING.")
-    public ResponseEntity<PaginatedList<ApprovalDto>> getApprovalAccounts(
+    public ResponseEntity<PaginatedList<ApprovalResponse>> getApprovalAccounts(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue =  "10") int pageSize) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
@@ -47,15 +47,15 @@ public class UserController {
 
     @PostMapping("/approvals")
     @Operation(summary = "Approve customer and create accounts", description = "Creates a checking and savings account for the given customer")
-    public ResponseEntity<Void> createAccounts(@RequestBody CreateAccountRequestDto request) {
+    public ResponseEntity<Void> createAccounts(@RequestBody CreateAccountRequest request) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
     @PatchMapping("/accounts/{id}")
     @Operation(summary = "Update specific account", description = "Updates the absolute limit, daily limit, or closed status of an account")
-    public ResponseEntity<AccountDetailDto> updateAccount(
+    public ResponseEntity<AccountDetailResponse> updateAccount(
         @PathVariable long id,
-        @RequestBody UpdateAccountRequestDto request) {
+        @RequestBody UpdateAccountRequest request) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 }

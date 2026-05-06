@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import nl.inholland.codegen.bankingapp.dtos.TransactionDto;
+import nl.inholland.codegen.bankingapp.dtos.TransactionResponse;
 import nl.inholland.codegen.bankingapp.utils.PaginatedList;
 
 @RestController
@@ -34,7 +34,7 @@ public class TransactionController {
 
     @GetMapping
     @Operation(summary = "List transactions", description = "Returns a paginated list of transactions for the customer")
-    public ResponseEntity<PaginatedList<TransactionDto>> listTransactions(
+    public ResponseEntity<PaginatedList<TransactionResponse>> listTransactions(
             @RequestParam(required = false) String fromIban,
             @RequestParam(required = false) String toIban,
             @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate dateRangeStart,

@@ -1,7 +1,7 @@
 package nl.inholland.codegen.bankingapp.models;
 
 import jakarta.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,7 +31,7 @@ public class Account {
     private Long absoluteLimitInCents;
 
     @Column(nullable = false)
-    private Date creationDate;
+    private LocalDateTime creationDate;
 
     @Column(nullable = false, unique = true)
     private String iban;
