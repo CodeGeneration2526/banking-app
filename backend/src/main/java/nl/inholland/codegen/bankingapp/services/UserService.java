@@ -1,15 +1,13 @@
 package nl.inholland.codegen.bankingapp.services;
 
+import nl.inholland.codegen.bankingapp.dtos.LoginRequestDTO;
+import nl.inholland.codegen.bankingapp.dtos.LoginResponseDTO;
 import nl.inholland.codegen.bankingapp.dtos.RegisterRequestDTO;
 import nl.inholland.codegen.bankingapp.dtos.UserResponseDTO;
 import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.models.Customer;
-import nl.inholland.codegen.bankingapp.models.CustomerStatus;
-import nl.inholland.codegen.bankingapp.models.Role;
 import nl.inholland.codegen.bankingapp.models.User;
-import nl.inholland.codegen.bankingapp.dtos.LoginRequestDTO;
-import nl.inholland.codegen.bankingapp.dtos.LoginResponseDTO;
 import nl.inholland.codegen.bankingapp.repositories.CustomerRepository;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.security.JwtService;
@@ -35,27 +33,22 @@ public class UserService {
     }
 
     public LoginResponseDTO login(LoginRequestDTO request) {
-
         User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new AuthenticationException("User not found"));
+            .orElseThrow(() -> new AuthenticationException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new AuthenticationException("Invalid credentials");
+            throw new AuthenticationException("Invalid email or password");
         }
 
-        String token = jwtService.generateToken(user);
-
-        return new LoginResponseDTO(token, user.getRole().name());
+        return new LoginResponseDTO(jwtService.generateToken(user), user.getRole().name());
     }
 
     public UserResponseDTO registerCustomer(RegisterRequestDTO request) {
-
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new AuthenticationException("Email already in use");
+            throw new BadRequestException("Email is already in use");
         }
-
         if (userRepository.findByBsn(request.bsn()).isPresent()) {
-            throw new BadRequestException("BSN already in use");
+            throw new BadRequestException("BSN is already in use");
         }
 
         User user = new User();
@@ -65,11 +58,13 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setBsn(request.bsn());
         user.setPhoneNumber(request.phoneNumber());
-        user.setRole(Role.CUSTOMER);
+        user.setRole(User.Role.CUSTOMER);
 
         User savedUser = userRepository.save(user);
 
-        Customer customer = new Customer(savedUser, CustomerStatus.PENDING);
+        Customer customer = new Customer();
+        customer.setUser(savedUser);
+        customer.setStatus(User.CustomerStatus.PENDING);
         customerRepository.save(customer);
 
         return new UserResponseDTO(

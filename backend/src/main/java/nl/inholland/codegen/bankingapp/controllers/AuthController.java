@@ -1,12 +1,20 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
-import nl.inholland.codegen.bankingapp.dtos.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import nl.inholland.codegen.bankingapp.dtos.LoginRequestDTO;
+import nl.inholland.codegen.bankingapp.dtos.LoginResponseDTO;
+import nl.inholland.codegen.bankingapp.dtos.RegisterRequestDTO;
+import nl.inholland.codegen.bankingapp.dtos.UserResponseDTO;
 import nl.inholland.codegen.bankingapp.services.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authentication", description = "Login and registration endpoints")
 public class AuthController {
 
     private final UserService userService;
@@ -16,30 +24,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponseDTO>> login(@RequestBody LoginRequestDTO request) {
-
-        LoginResponseDTO response = userService.login(request);
-
-        return ResponseEntity.ok(
-            new ApiResponse<>(
-                "Login successful",
-                200,
-                response
-            )
-        );
+    @Operation(summary = "Login", description = "Authenticate and receive a JWT token")
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
+        return ResponseEntity.ok(userService.login(request));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserResponseDTO>> register(@RequestBody RegisterRequestDTO request) {
-
-        UserResponseDTO user = userService.registerCustomer(request);
-
-        return ResponseEntity.status(201).body(
-            new ApiResponse<>(
-                "Registration successful. Awaiting employee approval.",
-                201,
-                user
-            )
-        );
+    @Operation(summary = "Register", description = "Register a new customer. Account requires employee approval.")
+    public ResponseEntity<UserResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerCustomer(request));
     }
 }

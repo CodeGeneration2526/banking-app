@@ -1,8 +1,8 @@
 package nl.inholland.codegen.bankingapp.dtos;
 
-public class CustomerLookupDto {
-    public long customerId;
-    public String firstName;
-    public String lastName;
-    public String iban;
-}
+public record CustomerLookupDto(
+    long customerId,
+    String firstName,
+    String lastName,
+    String iban
+) {}
