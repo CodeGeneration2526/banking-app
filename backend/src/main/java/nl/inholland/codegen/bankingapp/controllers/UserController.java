@@ -1,9 +1,10 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
 import nl.inholland.codegen.bankingapp.dtos.*;
+import nl.inholland.codegen.bankingapp.mappers.UserMapper;
+import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.utils.PaginatedList;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/users")
 @Tag(name = "User", description = "User account and transaction endpoints")
 public class UserController {
+
+    private final UserMapper userMapper;
+
+    public UserController(UserMapper userMapper) {
+        this.userMapper = userMapper;
+    }
+
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
     public ResponseEntity<PaginatedList<CustomerLookupResponse>> searchCustomers(
@@ -35,7 +43,22 @@ public class UserController {
     @GetMapping("{userId}")
     @Operation(summary = "Get one user", description = "Returns a list of all users.")
     public ResponseEntity<UserResponse> getUser() {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+        User dummyUser = new User();
+        dummyUser.setUserId(1234);
+        dummyUser.setLastName("Doe");
+        dummyUser.setFirstName("John");
+        dummyUser.setEmail("john.doe@email.com");
+        dummyUser.setPhoneNumber(1234567890);
+        dummyUser.setBsn(123456789);
+
+        UserResponse userResponse = userMapper.toUserResponse(dummyUser);
+
+        // To verify if the mapper is working, you can use postman/insomnia/your web browser
+        // I tested it with curl:
+        // ```
+        // $ curl -i localhost:8080/users/1234
+        // ```
+        return ResponseEntity.ok(userResponse);
     }
 
     @PostMapping
@@ -47,7 +70,9 @@ public class UserController {
     @PatchMapping("{userId}")
     @Operation(summary = "Update specific user", description = "Update values for a specific user.")
     public ResponseEntity<Void> updateUser(@RequestBody UserPatchRequest request) {
+
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
     }
 
     @DeleteMapping("{userId}")

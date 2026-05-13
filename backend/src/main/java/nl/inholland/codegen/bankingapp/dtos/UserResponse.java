@@ -1,6 +1,6 @@
 package nl.inholland.codegen.bankingapp.dtos;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public record UserResponse(
     long userId,
@@ -9,5 +9,5 @@ public record UserResponse(
     String email,
     int phoneNumber,
     int bsn,
-    Date registrationDate)
+    LocalDateTime registrationDate)
 {}
