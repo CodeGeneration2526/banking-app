@@ -14,6 +14,6 @@ public interface AccountMapper {
 
     AccountDetailResponse toAccountDetailResponse(Account account);
 
-    @Mapping(target = "type", expression = "java(account.getType().name())")
+    @Mapping(target = "accountType", expression = "java(account.getType().name())")
     AccountSummaryResponse toAccountSummaryResponse(Account account);
 }
