@@ -42,9 +42,9 @@ public class UserController {
 
     @GetMapping("{userId}")
     @Operation(summary = "Get one user", description = "Returns a list of all users.")
-    public ResponseEntity<UserResponse> getUser() {
+    public ResponseEntity<UserResponse> getUser(@PathVariable Long userId) {
         User dummyUser = new User();
-        dummyUser.setUserId(1234);
+        dummyUser.setUserId(userId);
         dummyUser.setLastName("Doe");
         dummyUser.setFirstName("John");
         dummyUser.setEmail("john.doe@email.com");
