@@ -1,9 +1,9 @@
 package nl.inholland.codegen.bankingapp.services;
 
-import nl.inholland.codegen.bankingapp.dtos.LoginRequestDTO;
-import nl.inholland.codegen.bankingapp.dtos.LoginResponseDTO;
-import nl.inholland.codegen.bankingapp.dtos.RegisterRequestDTO;
-import nl.inholland.codegen.bankingapp.dtos.UserResponseDTO;
+import nl.inholland.codegen.bankingapp.dtos.LoginRequest;
+import nl.inholland.codegen.bankingapp.dtos.LoginResponse;
+import nl.inholland.codegen.bankingapp.dtos.RegisterRequest;
+import nl.inholland.codegen.bankingapp.dtos.UserResponse;
 import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.models.Customer;
@@ -32,7 +32,7 @@ public class UserService {
         this.jwtService = jwtService;
     }
 
-    public LoginResponseDTO login(LoginRequestDTO request) {
+    public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
             .orElseThrow(() -> new AuthenticationException("Invalid email or password"));
 
@@ -40,10 +40,10 @@ public class UserService {
             throw new AuthenticationException("Invalid email or password");
         }
 
-        return new LoginResponseDTO(jwtService.generateToken(user), user.getRole().name());
+        return new LoginResponse(jwtService.generateToken(user), user.getRole().name());
     }
 
-    public UserResponseDTO registerCustomer(RegisterRequestDTO request) {
+    public UserResponse registerCustomer(RegisterRequest request) {
         if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new BadRequestException("Email is already in use");
         }
@@ -67,7 +67,7 @@ public class UserService {
         customer.setStatus(User.CustomerStatus.PENDING);
         customerRepository.save(customer);
 
-        return new UserResponseDTO(
+        return new UserResponse(
             savedUser.getUserId(),
             savedUser.getFirstName(),
             savedUser.getLastName(),

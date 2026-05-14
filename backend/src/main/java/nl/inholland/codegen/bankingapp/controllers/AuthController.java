@@ -3,10 +3,10 @@ package nl.inholland.codegen.bankingapp.controllers;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import nl.inholland.codegen.bankingapp.dtos.LoginRequestDTO;
-import nl.inholland.codegen.bankingapp.dtos.LoginResponseDTO;
-import nl.inholland.codegen.bankingapp.dtos.RegisterRequestDTO;
-import nl.inholland.codegen.bankingapp.dtos.UserResponseDTO;
+import nl.inholland.codegen.bankingapp.dtos.LoginRequest;
+import nl.inholland.codegen.bankingapp.dtos.LoginResponse;
+import nl.inholland.codegen.bankingapp.dtos.RegisterRequest;
+import nl.inholland.codegen.bankingapp.dtos.UserResponse;
 import nl.inholland.codegen.bankingapp.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,13 +25,13 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Authenticate and receive a JWT token")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(userService.login(request));
     }
 
     @PostMapping("/register")
     @Operation(summary = "Register", description = "Register a new customer. Account requires employee approval.")
-    public ResponseEntity<UserResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerCustomer(request));
     }
 }
