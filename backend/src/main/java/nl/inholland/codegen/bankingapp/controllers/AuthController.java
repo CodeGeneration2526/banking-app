@@ -26,12 +26,13 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Authenticate and receive a JWT token")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(userService.login(request));
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
     @PostMapping("/register")
     @Operation(summary = "Register", description = "Register a new customer. Account requires employee approval.")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerCustomer(request));
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+        // return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerCustomer(request));
     }
 }
