@@ -6,9 +6,7 @@ import nl.inholland.codegen.bankingapp.dtos.RegisterRequest;
 import nl.inholland.codegen.bankingapp.dtos.UserResponse;
 import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
-import nl.inholland.codegen.bankingapp.models.Customer;
 import nl.inholland.codegen.bankingapp.models.User;
-import nl.inholland.codegen.bankingapp.repositories.CustomerRepository;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,16 +16,13 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public UserService(UserRepository userRepository,
-                       CustomerRepository customerRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService) {
         this.userRepository = userRepository;
-        this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
@@ -62,10 +57,10 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        Customer customer = new Customer();
-        customer.setUser(savedUser);
-        customer.setStatus(User.CustomerStatus.PENDING);
-        customerRepository.save(customer);
+        // Customer customer = new Customer();
+        // customer.setUser(savedUser);
+        // customer.setStatus(User.CustomerStatus.PENDING);
+        // customerRepository.save(customer);
 
         return new UserResponse(
             savedUser.getUserId(),
