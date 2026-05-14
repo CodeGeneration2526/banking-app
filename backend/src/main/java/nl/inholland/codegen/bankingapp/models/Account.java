@@ -19,7 +19,7 @@ public class Account {
     private Long accountNumber;
 
     @Enumerated(EnumType.STRING)
-    private AccountType type;
+    private AccountType accountType;
 
     @Column(nullable = false)
     private Long storedAmountInCents;

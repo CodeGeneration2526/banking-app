@@ -1,9 +1,10 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
 import nl.inholland.codegen.bankingapp.dtos.*;
+import nl.inholland.codegen.bankingapp.mappers.UserMapper;
+import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.utils.PaginatedList;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/users")
 @Tag(name = "User", description = "User account and transaction endpoints")
 public class UserController {
+
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
     public ResponseEntity<PaginatedList<CustomerLookupResponse>> searchCustomers(
@@ -34,7 +36,7 @@ public class UserController {
 
     @GetMapping("{userId}")
     @Operation(summary = "Get one user", description = "Returns a list of all users.")
-    public ResponseEntity<UserResponse> getUser() {
+    public ResponseEntity<UserResponse> getUser(@PathVariable Long userId) {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
@@ -47,7 +49,9 @@ public class UserController {
     @PatchMapping("{userId}")
     @Operation(summary = "Update specific user", description = "Update values for a specific user.")
     public ResponseEntity<Void> updateUser(@RequestBody UserPatchRequest request) {
+
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
     }
 
     @DeleteMapping("{userId}")
