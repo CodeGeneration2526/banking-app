@@ -10,8 +10,6 @@ import nl.inholland.codegen.bankingapp.mappers.UserMapper;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 
-import java.util.Date;
-
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -53,7 +51,6 @@ public class UserService {
             .phoneNumber(request.phoneNumber())
             .role(User.Role.Customer)
             .build();
-
 
         try {
             User savedUser = userRepository.save(user);

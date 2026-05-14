@@ -15,12 +15,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "User", description = "User account and transaction endpoints")
 public class UserController {
 
-    private final UserMapper userMapper;
-
-    public UserController(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
-
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
     public ResponseEntity<PaginatedList<CustomerLookupResponse>> searchCustomers(
@@ -43,22 +37,7 @@ public class UserController {
     @GetMapping("{userId}")
     @Operation(summary = "Get one user", description = "Returns a list of all users.")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long userId) {
-        User dummyUser = new User();
-        dummyUser.setUserId(userId);
-        dummyUser.setLastName("Doe");
-        dummyUser.setFirstName("John");
-        dummyUser.setEmail("john.doe@email.com");
-        dummyUser.setPhoneNumber(1234567890);
-        dummyUser.setBsn(123456789);
-
-        UserResponse userResponse = userMapper.toUserResponse(dummyUser);
-
-        // To verify if the mapper is working, you can use postman/insomnia/your web browser
-        // I tested it with curl:
-        // ```
-        // $ curl -i localhost:8080/users/1234
-        // ```
-        return ResponseEntity.ok(userResponse);
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
     @PostMapping
