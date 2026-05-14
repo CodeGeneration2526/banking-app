@@ -1,11 +1,17 @@
 package nl.inholland.codegen.bankingapp.utils;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PaginatedList<T> {
-    public int pageStart;
-    public int pageEnd;
-    public int totalCount;
-
-    public List<T> content;
+    private int pageStart;
+    private int pageEnd;
+    private int totalCount;
+    private List<T> content;
 }
