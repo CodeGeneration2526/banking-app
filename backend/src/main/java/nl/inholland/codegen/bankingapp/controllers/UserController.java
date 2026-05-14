@@ -49,7 +49,6 @@ public class UserController {
     @PatchMapping("{userId}")
     @Operation(summary = "Update specific user", description = "Update values for a specific user.")
     public ResponseEntity<Void> updateUser(@RequestBody UserPatchRequest request) {
-
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }

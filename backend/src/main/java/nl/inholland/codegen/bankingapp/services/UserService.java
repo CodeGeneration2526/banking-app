@@ -1,17 +1,18 @@
 package nl.inholland.codegen.bankingapp.services;
 
+import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
 import nl.inholland.codegen.bankingapp.dtos.LoginRequest;
 import nl.inholland.codegen.bankingapp.dtos.LoginResponse;
 import nl.inholland.codegen.bankingapp.dtos.RegisterRequest;
+import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
 import nl.inholland.codegen.bankingapp.dtos.UserResponse;
 import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
+import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.mappers.UserMapper;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
-import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
-import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
-import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
+import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,16 +25,16 @@ import org.springframework.data.domain.Pageable;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     public UserService(
             UserRepository userRepository,
-            UserMapper userMapper,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil) {
         this.userRepository = userRepository;
-        this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -47,7 +48,7 @@ public class UserService {
         return new LoginResponse("TODO", user.getRole().name());
     }
 
-    public UserResponse registerCustomer(RegisterRequest request) {
+    public User registerCustomer(RegisterRequest request) {
         User user = User.builder()
             .firstName(request.firstName())
             .lastName(request.lastName())
@@ -59,8 +60,7 @@ public class UserService {
             .build();
 
         try {
-            User savedUser = userRepository.save(user);
-            return userMapper.toUserResponse(savedUser);
+            return userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
             // we can optionally check what constraint is violated, but it is honestly not needed
             throw new BadRequestException("Email or BSN is already in use");
