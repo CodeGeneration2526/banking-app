@@ -1,6 +1,7 @@
 package nl.inholland.codegen.bankingapp.models;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,8 +31,11 @@ public class User {
     @Column(nullable = false, unique = true)
     private int bsn;
 
+    @Column(nullable = false)
+    private String password;
+
     @Column(nullable = false, updatable = false)
-    private LocalDateTime registrationDate = LocalDateTime.now();
+    private Date registrationDate = new Date();
 
     @ManyToOne
     @JoinColumn(name = "user_approved_by")
