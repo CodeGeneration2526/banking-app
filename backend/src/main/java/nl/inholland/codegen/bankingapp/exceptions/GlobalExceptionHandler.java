@@ -11,21 +11,21 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import nl.inholland.codegen.bankingapp.dtos.ApiResponse;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<Map<String, String>> handleBadRequest(BadRequestException ex) {
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(Map.of("message", ex.getMessage()));
+    public ResponseEntity<ApiResponse> handleBadRequest(BadRequestException ex) {
+        ApiResponse body = new ApiResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<Map<String, String>> handleAuth(AuthenticationException ex) {
-        return ResponseEntity
-            .status(HttpStatus.UNAUTHORIZED)
-            .body(Map.of("message", ex.getMessage()));
+    public ResponseEntity<ApiResponse> handleAuth(AuthenticationException ex) {
+        ApiResponse body = new ApiResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -36,24 +36,21 @@ public class GlobalExceptionHandler {
                 FieldError::getDefaultMessage,
                 (existing, replacement) -> existing  
             ));
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, String>> handleMissingBody(HttpMessageNotReadableException ex) {
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(Map.of("message", "Request body is missing or contains invalid JSON"));
+    public ResponseEntity<ApiResponse> handleMissingBody(HttpMessageNotReadableException ex) {
+        ApiResponse body = new ApiResponse("Request body is missing or contains invalid JSON");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
-        ex.printStackTrace(); 
-        return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(Map.of(
-                "message", "An unexpected error occurred",
-                "error", ex.getClass().getSimpleName() + ": " + ex.getMessage() 
-            ));
+    public ResponseEntity<ApiResponse> handleGeneric(Exception ex) {
+        ex.printStackTrace();
+
+        ApiResponse body = new ApiResponse("Something went wrong");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

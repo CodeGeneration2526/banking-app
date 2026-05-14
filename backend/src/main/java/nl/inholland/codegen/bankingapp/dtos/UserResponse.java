@@ -1,11 +1,13 @@
 package nl.inholland.codegen.bankingapp.dtos;
 
-import nl.inholland.codegen.bankingapp.models.User;
+import java.util.Date;
 
 public record UserResponse(
-    Long userId,
+    long userId,
     String firstName,
     String lastName,
     String email,
-    User.Role role
-) {}
+    int phoneNumber,
+    int bsn,
+    Date registrationDate)
+{}
