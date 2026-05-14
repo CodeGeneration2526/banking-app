@@ -8,6 +8,9 @@ import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
+
+import java.util.Date;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -62,7 +65,9 @@ public class UserService {
             savedUser.getFirstName(),
             savedUser.getLastName(),
             savedUser.getEmail(),
-            savedUser.getRole()
+            Integer.parseInt(savedUser.getPhoneNumber()),
+            Integer.parseInt(savedUser.getBsn()),
+            new Date()
         );
     }
 }
