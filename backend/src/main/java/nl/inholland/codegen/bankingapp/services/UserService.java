@@ -8,7 +8,6 @@ import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
-import nl.inholland.codegen.bankingapp.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,14 +16,10 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
 
-    public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -35,7 +30,7 @@ public class UserService {
             throw new AuthenticationException("Invalid email or password");
         }
 
-        return new LoginResponse(jwtService.generateToken(user), user.getRole().name());
+        return new LoginResponse("TODO", user.getRole().name());
     }
 
     public UserResponse registerCustomer(RegisterRequest request) {
