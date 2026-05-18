@@ -36,14 +36,13 @@ public class Account {
     @Column(nullable = false, unique = true)
     private String iban;
 
-   @ManyToOne
-   private User owner;
+    @ManyToOne
+    private User owner;
 
-    enum AccountType {
-
-        CHECKING,
-        SAVINGS,
-        ATM
+    public enum AccountType {
+        Checking,
+        Savings,
+        Atm
     }
 }
 

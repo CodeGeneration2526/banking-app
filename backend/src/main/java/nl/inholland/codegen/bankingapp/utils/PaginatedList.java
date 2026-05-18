@@ -6,9 +6,13 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * @deprecated Use {@code org.springframework.data.domain.Page}
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class PaginatedList<T> {
     private int pageStart;
     private int pageEnd;

@@ -1,8 +1,7 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
 import nl.inholland.codegen.bankingapp.dtos.*;
-import nl.inholland.codegen.bankingapp.mappers.UserMapper;
-import nl.inholland.codegen.bankingapp.models.User;
+import nl.inholland.codegen.bankingapp.services.UserService;
 import nl.inholland.codegen.bankingapp.utils.PaginatedList;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +13,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/users")
 @Tag(name = "User", description = "User account and transaction endpoints")
 public class UserController {
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
 
     @GetMapping("/search")
     @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
@@ -31,6 +36,7 @@ public class UserController {
     public ResponseEntity<PaginatedList<UserResponse>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
+
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
