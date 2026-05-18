@@ -1,6 +1,5 @@
 package nl.inholland.codegen.bankingapp.models;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 import jakarta.persistence.*;
@@ -27,15 +26,16 @@ public class User {
     private String email;
 
     @Column(nullable = false, unique = true)
-    private int phoneNumber;
+    private String phoneNumber;
 
     @Column(nullable = false, unique = true)
-    private int bsn;
+    private String bsn;
 
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, updatable = false)
+    @Builder.Default
     private Date registrationDate = new Date();
 
     @ManyToOne
@@ -43,9 +43,11 @@ public class User {
     private User approvedBy;
 
     @Column(nullable = false)
+    @Builder.Default
     private Role role = Role.Customer;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean closed = false;
 
     public enum Role {

@@ -21,10 +21,12 @@ import org.springframework.data.domain.Pageable;
 
 @Service
 public class UserService {
+    private static final String INVALID_ERR_MSG = "Invalid email or password";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
 
     public UserService(
             UserRepository userRepository,
@@ -35,28 +37,22 @@ public class UserService {
         this.jwtUtil = jwtUtil;
     }
 
-    public LoginResponse login(LoginRequest request) {
+    /**
+     * @return Returns the JWT token
+     */
+    public String login(LoginRequest request) throws AuthenticationException {
         User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new AuthenticationException("Invalid email or password"));
+            .orElseThrow(() -> new AuthenticationException(INVALID_ERR_MSG));
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new AuthenticationException("Invalid email or password");
+        if (passwordEncoder.matches(request.password(), request.password())) {
+            String token = jwtUtil.generateToken(user.getEmail());
+            return token;
+        } else {
+            throw new AuthenticationException(INVALID_ERR_MSG);
         }
-
-        return new LoginResponse("TODO", user.getRole().name());
     }
 
-    public User registerCustomer(RegisterRequest request) {
-        User user = User.builder()
-            .firstName(request.firstName())
-            .lastName(request.lastName())
-            .email(request.email())
-            .password(passwordEncoder.encode(request.password()))
-            .bsn(request.bsn())
-            .phoneNumber(request.phoneNumber())
-            .role(User.Role.Customer)
-            .build();
-
+    public User register(User user) {
         try {
             return userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
