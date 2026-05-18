@@ -1,13 +1,7 @@
 package nl.inholland.codegen.bankingapp.services;
 
-import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
-import nl.inholland.codegen.bankingapp.dtos.LoginRequest;
-import nl.inholland.codegen.bankingapp.dtos.LoginResponse;
-import nl.inholland.codegen.bankingapp.dtos.RegisterRequest;
-import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
-import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
-import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
-import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
+import nl.inholland.codegen.bankingapp.dtos.*;
+import nl.inholland.codegen.bankingapp.exceptions.*;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
@@ -15,9 +9,7 @@ import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 
 @Service
 public class UserService {
