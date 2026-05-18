@@ -36,9 +36,8 @@ public class Account {
     @Column(nullable = false, unique = true)
     private String iban;
 
-//    Implement once User models is done
-//    @ManyToOne
-//    private User owner;
+   @ManyToOne
+   private User owner;
 
     enum AccountType {
 
