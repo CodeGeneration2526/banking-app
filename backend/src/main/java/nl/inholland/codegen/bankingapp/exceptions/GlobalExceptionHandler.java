@@ -53,4 +53,16 @@ public class GlobalExceptionHandler {
         ApiResponse body = new ApiResponse("Something went wrong");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiResponse> handleNotFound(NotFoundException ex) {
+        ApiResponse body = new ApiResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        ApiResponse body = new ApiResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 }
