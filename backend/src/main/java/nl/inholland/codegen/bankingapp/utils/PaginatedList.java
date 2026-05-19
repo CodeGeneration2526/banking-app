@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * @deprecated Use {@code org.springframework.data.domain.Page}
+ * @deprecated Use {@code org.springframework.data.web.PagedModel}
  */
 @Data
 @NoArgsConstructor

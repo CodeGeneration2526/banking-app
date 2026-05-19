@@ -1,5 +1,7 @@
 package nl.inholland.codegen.bankingapp.services;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,5 +26,9 @@ public class AccountService {
     ) {
         Account.AccountType accountType = Account.AccountType.Checking;
         return accountRepository.search(firstName, lastName, iban, accountType, pageable);
+    }
+
+    public Optional<Account> getAccountInfo(long accountId) {
+        return accountRepository.findByAccountId(accountId);
     }
 }

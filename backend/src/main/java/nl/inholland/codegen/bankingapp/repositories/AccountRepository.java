@@ -1,5 +1,7 @@
 package nl.inholland.codegen.bankingapp.repositories;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +30,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             @Param("accountType") Account.AccountType accountType,
             Pageable pageable
     );
+
+    Optional<Account> findByAccountId(long accountId);
 }
