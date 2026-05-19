@@ -9,6 +9,8 @@ import lombok.*;
 @Table(name = "users")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class User {
     // NOTE: it will perhaps be more realistic for a banking system to use UUIDv4 as the pk

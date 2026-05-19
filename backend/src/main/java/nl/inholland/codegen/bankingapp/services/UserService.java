@@ -36,7 +36,7 @@ public class UserService {
         User user = userRepository.findByEmail(request.email())
             .orElseThrow(() -> new AuthenticationException(INVALID_ERR_MSG));
 
-        if (passwordEncoder.matches(request.password(), request.password())) {
+        if (passwordEncoder.matches(request.password(), user.getPassword())) {
             String token = jwtUtil.generateToken(user.getEmail());
             return token;
         } else {
@@ -46,6 +46,9 @@ public class UserService {
 
     public User register(User user) {
         try {
+            String hashedPassword = passwordEncoder.encode(user.getPassword());
+            user.setPassword(hashedPassword);
+
             return userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
             // we can optionally check what constraint is violated, but it is honestly not needed
