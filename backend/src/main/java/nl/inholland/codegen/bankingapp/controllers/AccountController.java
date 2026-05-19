@@ -69,7 +69,10 @@ public class AccountController {
 
     @DeleteMapping("{accountId}")
     @Operation(summary = "Close an account", description = "Employee can close a specific account from an user.")
-    public ResponseEntity<ApiResponse> closeAccount() {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity<ApiResponse> closeAccount(@PathVariable long accountId) {
+        accountService.closeAccount(accountId);
+
+        ApiResponse resp = new ApiResponse("Account with the id " + accountId + " has been closed");
+        return ResponseEntity.ok(resp);
     }
 }

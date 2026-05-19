@@ -39,6 +39,9 @@ public class Account {
     @ManyToOne
     private User owner;
 
+    @Column(nullable = false)
+    private Boolean closed = false;
+
     public enum AccountType {
         Checking,
         Savings,
