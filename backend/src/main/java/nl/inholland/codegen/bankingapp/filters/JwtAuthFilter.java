@@ -3,6 +3,7 @@ package nl.inholland.codegen.bankingapp.filters;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -13,6 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import nl.inholland.codegen.bankingapp.models.User;
+import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 
 @Component
@@ -20,9 +22,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final String AUTH_HEADER_KEY = "Authorization";
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtUtil jwtUtil) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
+		this.userRepository = userRepository;
     }
 
 	@Override
@@ -41,8 +45,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                String username = jwtUtil.extractUsername(authHeaderValue);
-                Optional<User> user;
+                String email = jwtUtil.extractEmail(authHeaderValue);
+                Optional<User> userOptional = userRepository.findByEmail(email);
+
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
+                }
 
                 // TODO: set authentication state, depends on User Repository
                 // so for now, this code will not actually authenticate anything

@@ -27,8 +27,8 @@ public record RegisterRequest(
 
     @NotBlank(message = "BSN is required")
     @Pattern(regexp = "^[0-9]{8,9}$", message = "BSN must be 8 or 9 digits")
-    int bsn,
+    String bsn,
 
     @Pattern(regexp = "^(\\+?[0-9]{10,15})?$", message = "Invalid phone number format")
-    int phoneNumber
+    String phoneNumber
 ) {}

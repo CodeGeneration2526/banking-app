@@ -33,7 +33,7 @@ public class JwtUtil {
             .compact();
     }
 
-    public String extractUsername(String token) {
+    public String extractEmail(String token) {
         String jwt = token != null && token.startsWith(BEARER_PREFIX)
             ? token.substring(BEARER_PREFIX.length()) // is a bearer token, we strip the prefix
             : token; // not a bearer token
