@@ -1,7 +1,11 @@
 package nl.inholland.codegen.bankingapp.models;
 
-import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,8 +14,10 @@ import lombok.*;
 @Table(name = "users")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
     // NOTE: it will perhaps be more realistic for a banking system to use UUIDv4 as the pk
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,15 +33,16 @@ public class User {
     private String email;
 
     @Column(nullable = false, unique = true)
-    private int phoneNumber;
+    private String phoneNumber;
 
     @Column(nullable = false, unique = true)
-    private int bsn;
+    private String bsn;
 
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, updatable = false)
+    @Builder.Default
     private Date registrationDate = new Date();
 
     @ManyToOne
@@ -43,13 +50,30 @@ public class User {
     private User approvedBy;
 
     @Column(nullable = false)
+    @Builder.Default
     private Role role = Role.Customer;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean closed = false;
 
-    public enum Role {
+    public enum Role implements GrantedAuthority {
         Customer,
-        Employee,
+        Employee;
+
+		@Override
+		public String getAuthority() {
+            return name();
+		}
     }
+
+	@Override
+	public Collection<Role> getAuthorities() {
+        return List.of(role);
+	}
+
+	@Override
+	public String getUsername() {
+        return email;
+	}
 }

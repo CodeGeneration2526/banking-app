@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -45,17 +46,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
+                System.out.println("So we got to this point where the user might have auth headers");
                 String email = jwtUtil.extractEmail(authHeaderValue);
                 Optional<User> userOptional = userRepository.findByEmail(email);
 
                 if (userOptional.isPresent()) {
                     User user = userOptional.get();
+
+                    UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-
-                // TODO: set authentication state, depends on User Repository
-                // so for now, this code will not actually authenticate anything
-                // which is fine, we only need the stubs for now
-
             } catch (JwtException | IllegalArgumentException ignored) {
                 // Invalid/expired token: proceed without authentication
             }
