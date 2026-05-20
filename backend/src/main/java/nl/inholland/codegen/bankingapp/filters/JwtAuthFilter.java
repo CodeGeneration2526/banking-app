@@ -47,7 +47,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                System.out.println("So we got to this point where the user might have auth headers");
                 String email = jwtUtil.extractEmail(authHeaderValue);
                 Optional<User> userOptional = userRepository.findByEmail(email);
 
@@ -64,5 +63,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 // Invalid/expired token: proceed without authentication
             }
         }
+
+        filterChain.doFilter(request, response);
 	}
 }
