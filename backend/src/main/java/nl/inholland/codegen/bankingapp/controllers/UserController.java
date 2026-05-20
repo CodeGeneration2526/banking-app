@@ -1,8 +1,21 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
 import nl.inholland.codegen.bankingapp.dtos.*;
-import nl.inholland.codegen.bankingapp.utils.PaginatedList;
+import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
+import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
+import nl.inholland.codegen.bankingapp.mappers.UserMapper;
+import nl.inholland.codegen.bankingapp.models.User;
+import nl.inholland.codegen.bankingapp.services.UserService;
+
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,42 +25,60 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/users")
 @Tag(name = "User", description = "User account and transaction endpoints")
 public class UserController {
+    private final UserService userService;
+    private final UserMapper userMapper;
 
-    @GetMapping("/search")
-    @Operation(summary = "Search customers", description = "Lookup IBANs by customer name or IBAN.")
-    public ResponseEntity<PaginatedList<CustomerLookupResponse>> searchCustomers(
-            @RequestParam(required = false) String iban,
-            @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    public UserController(UserService userService, UserMapper userMapper) {
+        this.userService = userService;
+		this.userMapper = userMapper;
     }
+
 
     @GetMapping
     @Operation(summary = "Get all users", description = "Returns all user accounts.")
-    public ResponseEntity<PaginatedList<UserResponse>> getAllUsers(
+    public ResponseEntity<PagedModel<UserResponse>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+
+        // TODO: use auth state to only give access to data which the user should have
+        // - Employee user can have access to all users
+        // - Normal users only have access to themselves
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<UserResponse> response = userService.getAllUsers(true, pageable)
+            .map(userMapper::toUserResponse);
+
+        return ResponseEntity.ok(new PagedModel<>(response));
     }
 
     @GetMapping("{userId}")
-    @Operation(summary = "Get one user", description = "Returns a list of all users.")
+    @Operation(summary = "Get one user", description = "Returns just one user from the given ID.")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long userId) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+        UserResponse userResponse = userService.getUser(userId)
+            .map(userMapper::toUserResponse)
+            .orElseThrow(() -> new NotFoundException("User with the specified ID could not be found"));
+        return ResponseEntity.ok(userResponse);
+    }
+
+    @GetMapping("me")
+    @Operation(summary = "Get one user", description = "Returns info on the logged in user.")
+    public ResponseEntity<UserResponse> getSelfUser() {
+        User user = getAuthUser().orElseThrow(() -> new AuthenticationException());
+        UserResponse userResponse = userMapper.toUserResponse(user);
+
+        return ResponseEntity.ok(userResponse);
     }
 
     @PostMapping
     @Operation(summary = "Approve customer and create accounts", description = "Creates a checking and savings account for the given customer")
     public ResponseEntity<Void> createAccounts(@RequestBody AccountCreationRequest request) {
+        User user = getAuthUser().orElseThrow(() -> new AuthenticationException());
+        userService.createAccounts(request, user); // TODO: auth needs to be unborked
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
     @PatchMapping("{userId}")
     @Operation(summary = "Update specific user", description = "Update values for a specific user.")
     public ResponseEntity<Void> updateUser(@RequestBody UserPatchRequest request) {
-
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
 
     }
@@ -56,5 +87,16 @@ public class UserController {
     @Operation(summary = "Delete specific user", description = "Deletes a specific user, archiving their account.")
     public ResponseEntity<Void> deleteUser() {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    }
+
+    private Optional<User> getAuthUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return Optional.empty();
+        }
+
+        User user = (User)authentication.getPrincipal();
+        return Optional.of(user);
     }
 }

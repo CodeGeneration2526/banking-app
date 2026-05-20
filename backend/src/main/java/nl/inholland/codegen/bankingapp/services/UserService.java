@@ -1,25 +1,20 @@
 package nl.inholland.codegen.bankingapp.services;
 
-import nl.inholland.codegen.bankingapp.dtos.LoginRequest;
-import nl.inholland.codegen.bankingapp.dtos.LoginResponse;
-import nl.inholland.codegen.bankingapp.dtos.RegisterRequest;
-import nl.inholland.codegen.bankingapp.dtos.UserResponse;
-import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
-import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
-import nl.inholland.codegen.bankingapp.mappers.UserMapper;
+import nl.inholland.codegen.bankingapp.dtos.*;
+import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
+import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
+import nl.inholland.codegen.bankingapp.exceptions.*;
+import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
-import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
-import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
-import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
+
+import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 
 @Service
 public class UserService {
@@ -53,7 +48,7 @@ public class UserService {
         }
     }
 
-    public User registerCustomer(User user) {
+    public User register(User user) {
         try {
             String hashedPassword = passwordEncoder.encode(user.getPassword());
             user.setPassword(hashedPassword);
@@ -65,12 +60,15 @@ public class UserService {
         }
     }
 
-    public Page<User> getAllUsers(int page, int pageSize, Boolean hasAccount) {
-        Pageable pageable = PageRequest.of(page, pageSize);
 
-            // If it's null, return all users regardless of approval status
-        if (hasAccount == null) return userRepository.findByRole(User.Role.Customer, pageable);
-        if (hasAccount) {
+    public Page<User> getAllApprovedUsers(Pageable pageable) {
+        return getAllUsers(true, pageable);
+    }
+
+    public Page<User> getAllUsers(Boolean isApproved, Pageable pageable) {
+        // If it's null, return all users regardless of approval status
+        if (isApproved == null) return userRepository.findByRole(User.Role.Customer, pageable);
+        if (isApproved) {
             // If it's true return all approved users
             return userRepository.findByRoleAndApprovedByIsNotNull(User.Role.Customer, pageable);
         } else {
@@ -79,13 +77,15 @@ public class UserService {
         }
     }
 
-    public User getUser(long userId) {
-        return userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+    public Optional<User> getUser(long userId) {
+        return userRepository.findById(userId);
     }
 
-    public User createAccounts(AccountCreationRequest request, User approver) {
-        User user = getUser(request.userId());
+    public User createAccounts(AccountCreationRequest request, User approver)
+            throws NotFoundException, BadRequestException {
+
+        User user = getUser(request.userId())
+            .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.isClosed()) {
             throw new BadRequestException("Cannot approve a closed account");
@@ -99,8 +99,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateUser(UserPatchRequest request) {
-        User user = getUser(request.userId());
+    public User updateUser(UserPatchRequest request)
+            throws NotFoundException, BadRequestException {
+        User user = getUser(request.userId())
+            .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.isClosed()) {
             throw new BadRequestException("Cannot update a closed account");
@@ -112,8 +114,9 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void deleteUser(long userId) {
-        User user = getUser(userId);
+    public void deleteUser(long userId) throws NotFoundException {
+        User user = getUser(userId)
+            .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.isClosed()) return;
         user.setClosed(true);

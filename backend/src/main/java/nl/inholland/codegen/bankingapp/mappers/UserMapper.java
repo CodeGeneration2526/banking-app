@@ -9,6 +9,7 @@ import nl.inholland.codegen.bankingapp.models.User;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
+
     public UserResponse toUserResponse(User user);
 
     @Mapping(target = "userId", ignore = true)
