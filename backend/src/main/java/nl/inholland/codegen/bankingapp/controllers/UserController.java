@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -36,17 +37,14 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "Get all users", description = "Returns all user accounts.")
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<PagedModel<UserResponse>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
 
-        // TODO: use auth state to only give access to data which the user should have
-        // - Employee user can have access to all users
-        // - Normal users only have access to themselves
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<UserResponse> response = userService.getAllUsers(true, pageable)
-            .map(userMapper::toUserResponse);
 
+        Page<UserResponse> response = userService.getAllUsers(true, pageable).map(userMapper::toUserResponse);
         return ResponseEntity.ok(new PagedModel<>(response));
     }
 
@@ -62,7 +60,12 @@ public class UserController {
     @GetMapping("me")
     @Operation(summary = "Get one user", description = "Returns info on the logged in user.")
     public ResponseEntity<UserResponse> getSelfUser() {
-        User user = getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User authUser = getAuthUser().orElseThrow(() -> new AuthenticationException());
+
+        // this will likely be the same as authUser, but it could very well not be in some cases
+        User user = userService.getUser(authUser.getUserId())
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
         UserResponse userResponse = userMapper.toUserResponse(user);
 
         return ResponseEntity.ok(userResponse);
