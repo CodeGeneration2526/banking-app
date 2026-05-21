@@ -1,0 +1,43 @@
+package nl.inholland.codegen.bankingapp.services;
+
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
+import nl.inholland.codegen.bankingapp.models.Account;
+import nl.inholland.codegen.bankingapp.repositories.AccountRepository;
+
+@Service
+public class AccountService {
+
+    AccountRepository accountRepository;
+
+    public AccountService(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
+    }
+
+    public Page<Account> searchCheckingAccounts(
+            String firstName,
+            String lastName,
+            String iban,
+            Pageable pageable
+    ) {
+        Account.AccountType accountType = Account.AccountType.Checking;
+        return accountRepository.search(firstName, lastName, iban, accountType, pageable);
+    }
+
+    public Optional<Account> getAccountInfo(long accountId) {
+        return accountRepository.findByAccountId(accountId);
+    }
+
+    public void closeAccount(long accountId) {
+        Account account = accountRepository.findByAccountId(accountId)
+            .orElseThrow(() -> new NotFoundException("Account with the given account ID could not be found."));
+
+        account.setClosed(true);
+        accountRepository.save(account);
+    }
+}
