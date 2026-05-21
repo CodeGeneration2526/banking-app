@@ -1,6 +1,11 @@
 package nl.inholland.codegen.bankingapp.models;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,7 +17,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
     // NOTE: it will perhaps be more realistic for a banking system to use UUIDv4 as the pk
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,8 +57,23 @@ public class User {
     @Builder.Default
     private boolean closed = false;
 
-    public enum Role {
+    public enum Role implements GrantedAuthority {
         Customer,
-        Employee,
+        Employee;
+
+		@Override
+		public String getAuthority() {
+            return name();
+		}
     }
+
+	@Override
+	public Collection<Role> getAuthorities() {
+        return List.of(role);
+	}
+
+	@Override
+	public String getUsername() {
+        return email;
+	}
 }

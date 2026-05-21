@@ -7,6 +7,8 @@ import nl.inholland.codegen.bankingapp.dtos.*;
 import nl.inholland.codegen.bankingapp.mappers.UserMapper;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.services.UserService;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +40,6 @@ public class AuthController {
         User user = userService.register(userMapper.toModel(request));
         UserResponse userResponse = userMapper.toUserResponse(user);
 
-        return ResponseEntity.ok(userResponse);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
 }

@@ -1,7 +1,10 @@
 package nl.inholland.codegen.bankingapp.services;
 
 import nl.inholland.codegen.bankingapp.dtos.*;
+import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
+import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
 import nl.inholland.codegen.bankingapp.exceptions.*;
+import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
@@ -21,14 +24,13 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
+		this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -56,7 +58,6 @@ public class UserService {
             // we can optionally check what constraint is violated, but it is honestly not needed
             throw new BadRequestException("Email or BSN is already in use");
         }
-
     }
 
 

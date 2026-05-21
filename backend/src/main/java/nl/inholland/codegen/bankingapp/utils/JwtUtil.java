@@ -5,6 +5,7 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Jwts;
@@ -12,11 +13,16 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtil {
-    private static final String SECRET = "wNGVp8g65zeYvMprbMROoT2oZJVvpVq76fakQTPYOkNpmojQN6+ZoLywZg==";
-    private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
-    private static final long EXPIRATION_MS = 1000 * 60 * 60;
+    @Value("${jwt.secret}")
+    private String SECRET;
+    @Value("${jwt.expiration-ms}")
+    private long EXPIRATION_MS;
 
     public static final String BEARER_PREFIX = "Bearer ";
+
+    private SecretKey getSecretKey() {
+        return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateToken(String username) {
         long currentTime = System.currentTimeMillis();
@@ -29,17 +35,17 @@ public class JwtUtil {
             .subject(username)
             .issuedAt(iat)
             .expiration(eat)
-            .signWith(SECRET_KEY)
+            .signWith(getSecretKey())
             .compact();
     }
 
-    public String extractUsername(String token) {
+    public String extractEmail(String token) {
         String jwt = token != null && token.startsWith(BEARER_PREFIX)
             ? token.substring(BEARER_PREFIX.length()) // is a bearer token, we strip the prefix
             : token; // not a bearer token
 
         return Jwts.parser()
-            .verifyWith(SECRET_KEY)
+            .verifyWith(getSecretKey())
             .build()
             .parseSignedClaims(jwt)
             .getPayload()
