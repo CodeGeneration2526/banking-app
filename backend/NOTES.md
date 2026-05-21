@@ -1,5 +1,0 @@
-- remove iban and stuff from patch account resp (not in req)
-- remove closed status from patch for account too (delete superseeds it)
-- define error responses with springdoc too
-- Validation for the DTOs using validation annotations
-- Replace PaginatedList with the spring way of doing things
