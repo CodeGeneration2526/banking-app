@@ -45,7 +45,7 @@ public class JwtUtil {
             : token; // not a bearer token
 
         return Jwts.parser()
-            .verifyWith(SECRET_KEY)
+            .verifyWith(getSecretKey())
             .build()
             .parseSignedClaims(jwt)
             .getPayload()
