@@ -4,6 +4,9 @@ on:
   push:
     branches: [ "feat/junit" ]
 
+permissions:
+  checks: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
