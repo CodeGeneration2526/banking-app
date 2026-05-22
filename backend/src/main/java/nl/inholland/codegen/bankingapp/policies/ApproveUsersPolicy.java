@@ -13,7 +13,7 @@ public class ApproveUsersPolicy {
     {
         enforceApproverIsEmployee(approver);
         enforceUserIsNotClosed(user);
-        enforceUserIsApproved(user);
+        enforceUserIsNotApproved(user);
     }
 
     public void enforceApproverIsEmployee(User approver) throws AuthorizationDeniedException {
@@ -28,7 +28,7 @@ public class ApproveUsersPolicy {
         }
     }
 
-    public void enforceUserIsApproved(User user) throws BadRequestException {
+    public void enforceUserIsNotApproved(User user) throws BadRequestException {
         if (user.getApprovedBy() != null) {
             throw new BadRequestException("Customer already approved");
         }
