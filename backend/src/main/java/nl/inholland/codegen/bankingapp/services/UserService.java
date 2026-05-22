@@ -85,6 +85,7 @@ public class UserService {
         return userRepository.findById(userId);
     }
 
+    // NOTE: it might be better to name this "approveUser" as it is the main thing it does
     public User createAccounts(AccountCreationRequest request, User approver)
             throws NotFoundException, BadRequestException {
         User user = getUser(request.userId()).orElseThrow(() -> new NotFoundException("User not found"));
