@@ -2,9 +2,9 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "feat/junit" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "feat/junit" ]
 
 permissions:
   checks: write
@@ -21,6 +21,9 @@ jobs:
         java-version: '25'
         distribution: 'temurin'
         cache: maven
+
+    - name: Generate JWT secret
+      run: echo "JWT_SECRET=$(openssl rand -hex 64)" >> $GITHUB_ENV
 
     - name: Run All Tests
       run: cd backend && ./mvnw test
