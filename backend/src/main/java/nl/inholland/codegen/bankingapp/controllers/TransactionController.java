@@ -16,12 +16,19 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import nl.inholland.codegen.bankingapp.dtos.TransactionResponse;
+import nl.inholland.codegen.bankingapp.mappers.TransactionMapper;
 import nl.inholland.codegen.bankingapp.utils.PaginatedList;
 
 @RestController
 @RequestMapping("/transaction")
 @Tag(name = "Transaction", description = "Transaction endpoints")
 public class TransactionController {
+
+    private final TransactionMapper transactionMapper;
+
+    public TransactionController(TransactionMapper transactionMapper) {
+        this.transactionMapper = transactionMapper;
+    }
 
     @PostMapping
     @Operation(summary = "Issue a transaction", description = "Issues a transaction between two checking accounts")
