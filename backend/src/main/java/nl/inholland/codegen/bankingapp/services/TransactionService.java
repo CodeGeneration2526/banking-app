@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,13 +37,15 @@ public class TransactionService {
         Account receiver = accountRepository.findByIban(req.toIban())
             .orElseThrow(() -> new NotFoundException("To account not found"));
 
-        if (Boolean.TRUE.equals(sender.getClosed()) || Boolean.TRUE.equals(receiver.getClosed()))
+        if (Boolean.TRUE.equals(sender.getClosed()) || Boolean.TRUE.equals(receiver.getClosed())) {
             throw new BadRequestException("Account is closed");
+        }
 
         validateTransfer(initiator, sender, receiver);
 
-        if (sender.getStoredAmountInCents() - req.amountInCents() < sender.getAbsoluteLimitInCents())
+        if (sender.getStoredAmountInCents() - req.amountInCents() < sender.getAbsoluteLimitInCents()) {
             throw new BadRequestException("Transfer would drop balance below absolute limit");
+        }
 
         dailyLimitCheck(sender, req.amountInCents());
 
@@ -58,15 +61,24 @@ public class TransactionService {
         return transactionRepository.save(t);
     }
 
-    public Page<Transaction> getTransactions(User authUser, Long customerIdFilter, Pageable pageable) {
+    public Page<Transaction> getTransactions(User authUser, Long customerIdFilter, LocalDate dateFrom, LocalDate dateTo, String iban, Pageable pageable) {
         boolean isEmployee = authUser.getRole() == User.Role.Employee;
 
-        if (isEmployee && customerIdFilter == null)
-            return transactionRepository.findAll(pageable);
+        Specification<Transaction> scope = null;
+        if (!isEmployee) {
+            scope = TransactionSpecifications.ownerIs(authUser.getUserId());
+        } else if (customerIdFilter != null) {
+            scope = TransactionSpecifications.ownerIs(customerIdFilter);
+        }
 
-        long ownerId = isEmployee ? customerIdFilter : authUser.getUserId();
-        return transactionRepository
-            .findBySenderAccount_Owner_UserIdOrReceiverAccount_Owner_UserId(ownerId, ownerId, pageable);
+        Specification<Transaction> spec = Specification.allOf(
+            scope,
+            dateFrom != null ? TransactionSpecifications.timestampOnOrAfter(dateFrom.atStartOfDay()) : null,
+            dateTo   != null ? TransactionSpecifications.timestampBefore(dateTo.plusDays(1).atStartOfDay()) : null,
+            (iban != null && !iban.isBlank()) ? TransactionSpecifications.involvesIban(iban) : null
+        );
+
+        return transactionRepository.findAll(spec, pageable);
     }
 
     private void dailyLimitCheck(Account sender, long amountInCents) {
@@ -80,21 +92,25 @@ public class TransactionService {
             .findBySenderAccount_AccountIdAndTimestampBetween(sender.getAccountId(), startOfDay, startOfNextDay)
             .stream().mapToLong(Transaction::getAmountInCents).sum();
 
-        if (usedToday + amountInCents > sender.getDailyLimitInCents())
+        if (usedToday + amountInCents > sender.getDailyLimitInCents()) {
             throw new BadRequestException("Daily transfer limit exceeded");
+        }
     }
 
     private void validateTransfer(User initiator, Account sender, Account receiver) {
         //Ignore validations if the user is an employee
-        if (initiator.getRole() == User.Role.Employee) return;
+        if (initiator.getRole() == User.Role.Employee) {
+            return;
+        }
 
         long initiatorId = initiator.getUserId();
-        if (sender.getOwner().getUserId() != initiatorId)
+        if (sender.getOwner().getUserId() != initiatorId) {
             throw new BadRequestException("You can only transfer from your own account");
+        }
 
         if ((sender.getAccountType() == Account.AccountType.Savings || receiver.getAccountType() == Account.AccountType.Savings)
-            && receiver.getOwner().getUserId() != initiatorId)
+            && receiver.getOwner().getUserId() != initiatorId) {
             throw new BadRequestException("Savings transfers must stay between your own accounts");
-
+        }
     }
 }
