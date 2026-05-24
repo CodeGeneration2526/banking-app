@@ -3,6 +3,7 @@ package nl.inholland.codegen.bankingapp.controllers;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -51,18 +52,18 @@ public class TransactionController {
 
     @GetMapping
     @Operation(summary = "List transactions",
-               description = "Customer sees own; employee sees all or filtered by customerId. " +
+               description = "Customer sees own; employee sees all or filtered by userId. " +
                              "Optional filters: dateFrom, dateTo, iban. Sort via ?sort=field,dir (default timestamp,desc).")
     public ResponseEntity<PagedModel<TransactionResponse>> getTransactions(
-            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) Long userIdFilter,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) String iban,
-            @PageableDefault(size = 10, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 10, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable) {
         User authUser = getAuthUser().orElseThrow(() -> new AuthenticationException());
 
         Page<TransactionResponse> response = transactionService
-            .getTransactions(authUser, customerId, dateFrom, dateTo, iban, pageable)
+            .getTransactions(authUser, userIdFilter, dateFrom, dateTo, iban, pageable)
             .map(transactionMapper::toTransactionResponse);
 
         return ResponseEntity.ok(new PagedModel<>(response));

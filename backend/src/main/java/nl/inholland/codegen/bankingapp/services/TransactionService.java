@@ -61,22 +61,20 @@ public class TransactionService {
         return transactionRepository.save(t);
     }
 
-    public Page<Transaction> getTransactions(User authUser, Long customerIdFilter, LocalDate dateFrom, LocalDate dateTo, String iban, Pageable pageable) {
+    public Page<Transaction> getTransactions(User authUser, Long userIdFilter, LocalDate dateFrom, LocalDate dateTo, String iban, Pageable pageable) {
         boolean isEmployee = authUser.getRole() == User.Role.Employee;
 
         Specification<Transaction> scope = null;
         if (!isEmployee) {
             scope = TransactionSpecifications.ownerIs(authUser.getUserId());
-        } else if (customerIdFilter != null) {
-            scope = TransactionSpecifications.ownerIs(customerIdFilter);
+        } else if (userIdFilter != null) {
+            scope = TransactionSpecifications.ownerIs(userIdFilter);
         }
 
-        Specification<Transaction> spec = Specification.allOf(
-            scope,
-            dateFrom != null ? TransactionSpecifications.timestampOnOrAfter(dateFrom.atStartOfDay()) : null,
-            dateTo   != null ? TransactionSpecifications.timestampBefore(dateTo.plusDays(1).atStartOfDay()) : null,
-            (iban != null && !iban.isBlank()) ? TransactionSpecifications.involvesIban(iban) : null
-        );
+        Specification<Transaction> spec = Specification.where(scope);
+        if (dateFrom != null) spec = spec.and(TransactionSpecifications.timestampOnOrAfter(dateFrom.atStartOfDay()));
+        if (dateTo   != null) spec = spec.and(TransactionSpecifications.timestampBefore(dateTo.plusDays(1).atStartOfDay()));
+        if (iban != null && !iban.isBlank()) spec = spec.and(TransactionSpecifications.involvesIban(iban));
 
         return transactionRepository.findAll(spec, pageable);
     }
