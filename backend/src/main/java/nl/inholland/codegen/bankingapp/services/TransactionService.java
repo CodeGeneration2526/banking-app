@@ -92,8 +92,9 @@ public class TransactionService {
         if (sender.getOwner().getUserId() != initiatorId)
             throw new BadRequestException("You can only transfer from your own account");
 
-        if (sender.getAccountType() == Account.AccountType.Savings
+        if ((sender.getAccountType() == Account.AccountType.Savings || receiver.getAccountType() == Account.AccountType.Savings)
             && receiver.getOwner().getUserId() != initiatorId)
-            throw new BadRequestException("From a savings account you can only transfer to your own account");
+            throw new BadRequestException("Savings transfers must stay between your own accounts");
+
     }
 }
