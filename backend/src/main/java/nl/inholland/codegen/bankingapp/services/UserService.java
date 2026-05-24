@@ -6,6 +6,7 @@ import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
 import nl.inholland.codegen.bankingapp.exceptions.*;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.User;
+import nl.inholland.codegen.bankingapp.policies.ApproveUsersPolicy;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 
@@ -23,14 +24,17 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final ApproveUsersPolicy approveUsersPolicy;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            ApproveUsersPolicy approveUsersPolicy) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
 		this.jwtUtil = jwtUtil;
+		this.approveUsersPolicy = approveUsersPolicy;
     }
 
     /**
@@ -81,18 +85,12 @@ public class UserService {
         return userRepository.findById(userId);
     }
 
+    // NOTE: it might be better to name this "approveUser" as it is the main thing it does
     public User createAccounts(AccountCreationRequest request, User approver)
             throws NotFoundException, BadRequestException {
+        User user = getUser(request.userId()).orElseThrow(() -> new NotFoundException("User not found"));
 
-        User user = getUser(request.userId())
-            .orElseThrow(() -> new NotFoundException("User not found"));
-
-        if (user.isClosed()) {
-            throw new BadRequestException("Cannot approve a closed account");
-        }
-        if (user.getApprovedBy() != null) {
-            throw new BadRequestException("Customer already approved");
-        }
+        approveUsersPolicy.enforceApproveUsersPolicy(user, approver);
 
         user.setApprovedBy(approver);
         // TODO: create checking + savings accounts after transaction stuff is implemented
