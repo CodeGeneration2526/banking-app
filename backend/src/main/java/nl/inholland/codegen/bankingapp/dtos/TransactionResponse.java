@@ -6,7 +6,7 @@ public record TransactionResponse (
     long transactionId,
     String fromIban,
     String toIban,
-    int amountInCents,
+    long amountInCents,
     LocalDateTime timestamp,
-    String transferredBy)
+    String initiatedBy)
 {}
