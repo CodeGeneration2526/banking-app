@@ -19,7 +19,7 @@ public class Account {
     private Long accountNumber;
 
     @Enumerated(EnumType.STRING)
-    private AccountType type;
+    private AccountType accountType;
 
     @Column(nullable = false)
     private Long storedAmountInCents;
@@ -36,15 +36,16 @@ public class Account {
     @Column(nullable = false, unique = true)
     private String iban;
 
-//    Implement once User models is done
-//    @ManyToOne
-//    private User owner;
+    @ManyToOne
+    private User owner;
 
-    enum AccountType {
+    @Column(nullable = false)
+    private Boolean closed = false;
 
-        CHECKING,
-        SAVINGS,
-        ATM
+    public enum AccountType {
+        Checking,
+        Savings,
+        Atm
     }
 }
 

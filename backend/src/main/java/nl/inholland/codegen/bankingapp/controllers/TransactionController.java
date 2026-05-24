@@ -1,69 +1,82 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import nl.inholland.codegen.bankingapp.dtos.TransactionRequest;
 import nl.inholland.codegen.bankingapp.dtos.TransactionResponse;
-import nl.inholland.codegen.bankingapp.utils.PaginatedList;
+import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
+import nl.inholland.codegen.bankingapp.mappers.TransactionMapper;
+import nl.inholland.codegen.bankingapp.models.Transaction;
+import nl.inholland.codegen.bankingapp.models.User;
+import nl.inholland.codegen.bankingapp.services.TransactionService;
 
 @RestController
-@RequestMapping("/transaction")
+@RequestMapping("/transactions")
 @Tag(name = "Transaction", description = "Transaction endpoints")
 public class TransactionController {
 
-    @PostMapping
-    @Operation(summary = "Issue a transaction", description = "Issues a transaction between two checking accounts")
-    public ResponseEntity<Void> issueTransaction(
-            @RequestBody String fromIban,
-            @RequestBody String toIban) {
+    private final TransactionService transactionService;
+    private final TransactionMapper transactionMapper;
 
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    public TransactionController(TransactionService transactionService, TransactionMapper transactionMapper) {
+        this.transactionService = transactionService;
+        this.transactionMapper = transactionMapper;
+    }
+
+    @PostMapping
+    @Operation(summary = "Execute a transaction", description = "Transfers funds between two accounts")
+    public ResponseEntity<TransactionResponse> executeTransaction(@Valid @RequestBody TransactionRequest request) {
+        User initiator = getAuthUser().orElseThrow(() -> new AuthenticationException());
+
+        Transaction transaction = transactionService.executeTransaction(request, initiator);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionMapper.toTransactionResponse(transaction));
     }
 
     @GetMapping
-    @Operation(summary = "List transactions", description = "Returns a paginated list of transactions for the customer")
-    public ResponseEntity<PaginatedList<TransactionResponse>> listTransactions(
-            @RequestParam(required = false) String fromIban,
-            @RequestParam(required = false) String toIban,
-            @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate dateRangeStart,
-            @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate dateRangeEnd,
-            @RequestParam(required = false) Integer amountCents,
-            @RequestParam(required = false) AmountFilter amountFilter,
-            @RequestParam(defaultValue = "Both") AccountType accountType,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "16") int pageSize,
-            @RequestParam(defaultValue = "Descending") TimestampSort timestampSort) {
+    @Operation(summary = "List transactions",
+               description = "Customer sees own; employee sees all or filtered by userId. " +
+                             "Optional filters: dateFrom, dateTo, iban. Sort via ?sort=field,dir (default timestamp,desc).")
+    public ResponseEntity<PagedModel<TransactionResponse>> getTransactions(
+            @RequestParam(required = false) Long userIdFilter,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) String iban,
+            @ParameterObject @PageableDefault(size = 10, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable) {
+        User authUser = getAuthUser().orElseThrow(() -> new AuthenticationException());
 
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        Page<TransactionResponse> response = transactionService
+            .getTransactions(authUser, userIdFilter, dateFrom, dateTo, iban, pageable)
+            .map(transactionMapper::toTransactionResponse);
+
+        return ResponseEntity.ok(new PagedModel<>(response));
     }
 
-    public enum AmountFilter {
-        GreaterThan,
-        EqualTo,
-        LessThan,
-    }
+    private Optional<User> getAuthUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    public enum TimestampSort {
-        Descending,
-        Ascending,
-    }
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return Optional.empty();
+        }
 
-    public enum AccountType {
-        Current,
-        Savings,
-        Both,
+        User user = (User)authentication.getPrincipal();
+        return Optional.of(user);
     }
-
 }

@@ -1,0 +1,54 @@
+package nl.inholland.codegen.bankingapp.utils;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
+@Component
+public class JwtUtil {
+    @Value("${jwt.secret}")
+    private String SECRET;
+    @Value("${jwt.expiration-ms}")
+    private long EXPIRATION_MS;
+
+    public static final String BEARER_PREFIX = "Bearer ";
+
+    private SecretKey getSecretKey() {
+        return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String generateToken(String username) {
+        long currentTime = System.currentTimeMillis();
+        
+        Date iat = new Date(currentTime);
+        Date eat = new Date(currentTime + EXPIRATION_MS);
+
+        return Jwts
+            .builder()
+            .subject(username)
+            .issuedAt(iat)
+            .expiration(eat)
+            .signWith(getSecretKey())
+            .compact();
+    }
+
+    public String extractEmail(String token) {
+        String jwt = token != null && token.startsWith(BEARER_PREFIX)
+            ? token.substring(BEARER_PREFIX.length()) // is a bearer token, we strip the prefix
+            : token; // not a bearer token
+
+        return Jwts.parser()
+            .verifyWith(getSecretKey())
+            .build()
+            .parseSignedClaims(jwt)
+            .getPayload()
+            .getSubject();
+    }
+}
