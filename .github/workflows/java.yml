@@ -2,9 +2,9 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ "main", "feat/junit" ]
+    branches: [ "main", "devel" ]
   pull_request:
-    branches: [ "main", "feat/junit" ]
+    branches: [ "main", "devel" ]
 
 permissions:
   checks: write
