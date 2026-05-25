@@ -19,9 +19,9 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Query("""
         SELECT a from Account a
         WHERE LOWER(a.owner.firstName) LIKE LOWER(CONCAT('%', :firstName, '%'))
-          AND LOWER(a.owner.lastName) LIKE LOWER(CONCAT('%', :lastName, '%'))
-          AND a.iban = :iban
-          AND a.accountType = :accountType
+          OR LOWER(a.owner.lastName) LIKE LOWER(CONCAT('%', :lastName, '%'))
+          OR a.iban = :iban
+          OR a.accountType = :accountType
     """)
     Page<Account> search(
             @Param("firstName") String firstName,
