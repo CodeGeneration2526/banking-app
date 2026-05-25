@@ -2,11 +2,14 @@ package nl.inholland.codegen.bankingapp.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import lombok.Getter;
-import lombok.Setter;
+
+import lombok.*;
 
 @Entity
 @Table(name = "accounts")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 public class Account {
@@ -40,6 +43,7 @@ public class Account {
     private User owner;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean closed = false;
 
     public enum AccountType {
