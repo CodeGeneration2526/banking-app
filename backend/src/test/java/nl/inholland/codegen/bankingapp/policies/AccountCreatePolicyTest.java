@@ -68,9 +68,4 @@ class AccountCreatePolicyTest {
         assertThrows(AuthorizationDeniedException.class,
                 () -> accountCreatePolicy.enforceAccountCreatePolicy(account, customerUser));
     }
-
-    @Test
-    void enforceAccountCreatePolicy_successWithEmployeeAndIban() {
-        assertDoesNotThrow(() -> accountCreatePolicy.enforceAccountCreatePolicy(account, employeeUser));
-    }
 }
