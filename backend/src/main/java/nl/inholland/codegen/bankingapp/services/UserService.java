@@ -94,6 +94,8 @@ public class UserService {
 
         user.setApprovedBy(approver);
         // TODO: create checking + savings accounts after transaction stuff is implemented
+        // NOTE: it could be worthwhile to handle this in the client
+        // for example, a button which says "create default accounts", which can call POST /accounts
         return userRepository.save(user);
     }
 
