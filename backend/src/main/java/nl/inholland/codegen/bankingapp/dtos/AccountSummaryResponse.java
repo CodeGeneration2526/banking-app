@@ -4,6 +4,6 @@ public record AccountSummaryResponse(
     long accountId,
     String iban,
     String accountType,
-    String firstName,
-    String lastName
+    String ownerFirstName,
+    String ownerLastName
 ) {}
