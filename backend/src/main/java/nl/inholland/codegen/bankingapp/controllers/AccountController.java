@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -90,6 +91,7 @@ public class AccountController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<AccountDetailResponse> createAccount(@Valid @RequestBody NewAccountRequest request) {
         User issuer = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
         User accountUser = userService.getUser(request.userId()).orElseThrow(() -> new BadRequestException("userId is invalid"));
