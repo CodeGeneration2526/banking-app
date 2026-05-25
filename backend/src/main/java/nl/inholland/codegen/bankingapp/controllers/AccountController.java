@@ -90,14 +90,15 @@ public class AccountController {
     }
 
     @PostMapping
-    public ResponseEntity<Account> createAccount(@Valid @RequestBody NewAccountRequest request) {
+    public ResponseEntity<AccountDetailResponse> createAccount(@Valid @RequestBody NewAccountRequest request) {
         User issuer = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
         User accountUser = userService.getUser(request.userId()).orElseThrow(() -> new BadRequestException("userId is invalid"));
 
         Account account = accountMapper.toModel(request, accountUser);
 
         Account createdAccount = accountService.createAccount(account, issuer);
+        AccountDetailResponse accountDetailResponse = accountMapper.toAccountDetailResponse(createdAccount);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdAccount);
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountDetailResponse);
     }
 }
