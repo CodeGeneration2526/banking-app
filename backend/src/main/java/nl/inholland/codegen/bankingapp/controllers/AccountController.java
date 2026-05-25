@@ -1,8 +1,8 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.*;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,11 +38,9 @@ public class AccountController {
             @RequestParam(required = false) String iban,
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int pageSize)
+            @ParameterObject @PageableDefault(size = 10, sort = "accountId", direction = Sort.Direction.DESC) Pageable pageable
+    )
     {
-        Pageable pageable = PageRequest.of(page, pageSize);
-
         Page<AccountSummaryResponse> resp = accountService.searchCheckingAccounts(firstName, lastName, iban, pageable)
             .map(accountMapper::toAccountSummaryResponse);
 
