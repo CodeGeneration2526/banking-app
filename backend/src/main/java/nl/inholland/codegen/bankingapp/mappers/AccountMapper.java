@@ -17,7 +17,6 @@ public interface AccountMapper {
     AccountDetailResponse toAccountDetailResponse(Account account);
 
     @Mapping(target = "accountId", ignore = true)
-    @Mapping(target = "accountNumber", ignore = true)
     @Mapping(target = "storedAmountInCents", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "iban", ignore = true)
