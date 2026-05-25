@@ -1,7 +1,9 @@
 package nl.inholland.codegen.bankingapp.dtos;
 
-public record AccountSummaryResponse (
+public record AccountSummaryResponse(
     long accountId,
     String iban,
-    String accountType)
-{}
+    String accountType,
+    String firstName,
+    String lastName
+) {}
