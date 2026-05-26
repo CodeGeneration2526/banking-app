@@ -91,7 +91,7 @@ public class AccountController {
     }
 
     @PostMapping
-    // @PreAuthorize("hasRole('ROLE_Employee')")
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<AccountDetailResponse> createAccount(@Valid @RequestBody NewAccountRequest request) {
         User issuer = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
         User accountUser = userService.getUser(request.userId()).orElseThrow(() -> new BadRequestException("userId is invalid"));
