@@ -20,8 +20,8 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long accountId;
 
-    // @Column(nullable = true, unique = true)
-    // private Long accountNumber;
+    @Column(nullable = false, unique = true, updatable = false)
+    private Long accountNumber;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -43,7 +43,7 @@ public class Account {
     @Builder.Default
     private Date creationDate = new Date();
 
-    @Column(nullable = false, unique = true, updatable = false)
+    @Column(nullable = true, unique = true, updatable = false)
     private String iban;
 
     @ManyToOne

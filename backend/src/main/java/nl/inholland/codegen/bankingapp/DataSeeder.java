@@ -6,6 +6,8 @@ import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.AccountRepository;
 import nl.inholland.codegen.bankingapp.repositories.TransactionRepository;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
+import nl.inholland.codegen.bankingapp.utils.IbanUtil;
+
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,13 +23,16 @@ public class DataSeeder implements ApplicationRunner {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final IbanUtil ibanUtil;
 
     public DataSeeder(UserRepository userRepository, AccountRepository accountRepository,
-                      TransactionRepository transactionRepository, PasswordEncoder passwordEncoder) {
+                      TransactionRepository transactionRepository, PasswordEncoder passwordEncoder,
+                      IbanUtil ibanUtil) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.passwordEncoder = passwordEncoder;
+		this.ibanUtil = ibanUtil;
     }
 
     @Override
@@ -115,16 +120,23 @@ public class DataSeeder implements ApplicationRunner {
 
     private Account saveAccount(User owner, Account.AccountType type, String iban, long balanceCents,
                                  long dailyLimitCents, long absoluteLimitCents) {
+        long accountNumber = ibanUtil.newAccountNumber();
+
         Account a = new Account();
         a.setOwner(owner);
         a.setAccountType(type);
         a.setIban(iban);
-        // a.setAccountNumber(accountNumber);
+        a.setAccountNumber(accountNumber);
         a.setStoredAmountInCents(balanceCents);
         a.setDailyLimitInCents(dailyLimitCents);
         a.setAbsoluteLimitInCents(absoluteLimitCents);
         // a.setCreationDate(LocalDateTime.now());
         a.setClosed(false);
+
+        if (type == Account.AccountType.Checking) {
+            a.setIban(ibanUtil.generateIban(accountNumber));
+        }
+
         return accountRepository.save(a);
     }
 }

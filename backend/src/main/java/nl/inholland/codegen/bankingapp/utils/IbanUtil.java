@@ -13,7 +13,15 @@ public class IbanUtil {
 
     private final Random random = new Random();
 
-    public long getAccountNumber() {
+    public boolean matches(long accountNumber, String iban) {
+        if (iban == null) {
+            return false;
+        }
+
+        return generateIban(accountNumber).equalsIgnoreCase(iban);
+    }
+
+    public long newAccountNumber() {
         return (long)(random.nextLong() % MAX_ACCOUNT_NUMBER + 1);
     }
 

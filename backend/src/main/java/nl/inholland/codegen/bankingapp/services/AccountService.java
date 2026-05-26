@@ -52,10 +52,15 @@ public class AccountService {
     }
 
     public Account createAccount(Account account, User issuer) {
-        account.setIban(ibanUtil.generateIban(account.getAccountId()));
+        Long newAccountNumber = ibanUtil.newAccountNumber();
+        account.setAccountNumber(newAccountNumber);
+
+        if (account.getAccountType() == Account.AccountType.Checking) {
+            String iban = ibanUtil.generateIban(newAccountNumber);
+            account.setIban(iban);
+        }
 
         accountCreatePolicy.enforceAccountCreatePolicy(account, issuer);
-
         return accountRepository.save(account);
     }
 }
