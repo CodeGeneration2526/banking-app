@@ -30,6 +30,8 @@ class AccountCreatePolicyTest {
 
         account = new Account();
         account.setAccountType(Account.AccountType.Checking);
+        account.setAccountNumber(1L);
+        account.setIban("NL00INHO0000000001");
     }
 
     @Test
@@ -43,31 +45,60 @@ class AccountCreatePolicyTest {
         assertDoesNotThrow(() -> accountCreatePolicy.enforceIssuerIsEmployee(employeeUser));
     }
 
-    // @Test
-    // void enforceHasIban_throwsWithNullIban() {
-    //     account.setIban(null);
-    //
-    //     assertThrows(IbanNotGenerated.class,
-    //             () -> accountCreatePolicy.enforceHasIban(account));
-    // }
-    //
-    // @Test
-    // void enforceHasIban_throwsWithBlankIban() {
-    //     account.setIban("   ");
-    //
-    //     assertThrows(IbanNotGenerated.class,
-    //             () -> accountCreatePolicy.enforceHasIban(account));
-    // }
-    //
-    // @Test
-    // void enforceHasIban_successWithIban() {
-    //     account.setIban("NL00INHO0000000001");
-    //     assertDoesNotThrow(() -> accountCreatePolicy.enforceHasIban(account));
-    // }
+    @Test
+    void enforceAccountHasAccountNumber_throwsWithNullAccountNumber() {
+        account.setAccountNumber(null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> accountCreatePolicy.enforceAccountHasAccountNumber(account));
+    }
+
+    @Test
+    void enforceAccountHasAccountNumber_successWithAccountNumber() {
+        account.setAccountNumber(1L);
+
+        assertDoesNotThrow(() -> accountCreatePolicy.enforceAccountHasAccountNumber(account));
+    }
+
+    @Test
+    void enforceCheckingAccountHasIban_throwsWithNullIban() {
+        account.setIban(null);
+
+        assertThrows(IbanNotGenerated.class,
+                () -> accountCreatePolicy.enforceCheckingAccountHasIban(account));
+    }
+
+    @Test
+    void enforceCheckingAccountHasIban_successWithIban() {
+        account.setIban("NL00INHO0000000001");
+
+        assertDoesNotThrow(() -> accountCreatePolicy.enforceCheckingAccountHasIban(account));
+    }
 
     @Test
     void enforceAccountCreatePolicy_throwsWhenIssuerNotEmployee() {
         assertThrows(AuthorizationDeniedException.class,
                 () -> accountCreatePolicy.enforceAccountCreatePolicy(account, customerUser));
+    }
+
+    @Test
+    void enforceAccountCreatePolicy_throwsWhenAccountNumberMissing() {
+        account.setAccountNumber(null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> accountCreatePolicy.enforceAccountCreatePolicy(account, employeeUser));
+    }
+
+    @Test
+    void enforceAccountCreatePolicy_throwsWhenCheckingAccountIbanMissing() {
+        account.setIban(null);
+
+        assertThrows(IbanNotGenerated.class,
+                () -> accountCreatePolicy.enforceAccountCreatePolicy(account, employeeUser));
+    }
+
+    @Test
+    void enforceAccountCreatePolicy_successWithEmployeeAndValidAccount() {
+        assertDoesNotThrow(() -> accountCreatePolicy.enforceAccountCreatePolicy(account, employeeUser));
     }
 }
