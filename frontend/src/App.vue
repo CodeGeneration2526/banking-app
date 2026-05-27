@@ -7,16 +7,13 @@
                 <li><strong>Bank</strong></li>
             </ul>
             <ul>
-                <li><a href="#" class="contrast">Login/Register</a></li>
+                <li><RouterLink to="/" class="contrast">Home</RouterLink></li>
+                <li><RouterLink to="/authenticate" class="contrast">Login/Register</RouterLink></li>
             </ul>
         </nav>
     </header>
     <main>
-        <h1>You did it!</h1>
-        <p>
-            Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-            documentation
-        </p>
+        <RouterView />
     </main>
     <footer>
         <small>&#169; Jonathan Mauracio<br></small>

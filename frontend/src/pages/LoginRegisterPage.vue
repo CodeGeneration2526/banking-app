@@ -1,0 +1,3 @@
+<template>
+    login/register
+</template>
