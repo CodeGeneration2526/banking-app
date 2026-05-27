@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 public record TransactionResponse (
     long transactionId,
-    String fromIban,
-    String toIban,
+    String from,
+    String to,
     long amountInCents,
     LocalDateTime timestamp,
     String initiatedBy)

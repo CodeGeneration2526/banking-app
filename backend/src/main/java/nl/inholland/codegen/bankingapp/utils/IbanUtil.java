@@ -58,4 +58,36 @@ public class IbanUtil {
 
         return IBAN_COUNTRY_CODE + checkDigits + IBAN_BANK_CODE + accountNumberStr;
     }
+
+    // Accepts a string (Expected to be either an IBAN or account number) and returns just the account number (if it's IBAN, convert)
+    public long resolveAccountNumber(String input) {
+        String normalized = input.replaceAll("\\s+", "").toUpperCase();
+
+        if (normalized.length() == 18) {
+            return ibanToAccountNumber(normalized);
+        }
+
+        try {
+            return Long.parseLong(normalized);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid account identifier");
+        }
+    }
+
+    public Long ibanToAccountNumber(String iban) {
+        // Validate country and bank code
+        if (!iban.startsWith(IBAN_COUNTRY_CODE)) {
+            throw new IllegalArgumentException("Invalid country code");
+        }
+
+        String bankCode = iban.substring(4, 8);
+        if (!IBAN_BANK_CODE.equals(bankCode)) {
+            throw new IllegalArgumentException("Invalid bank code");
+        }
+
+        // Extract account number part
+        String accountNumberStr = iban.substring(8, 18);
+
+        return Long.parseLong(accountNumberStr);
+    }
 }
