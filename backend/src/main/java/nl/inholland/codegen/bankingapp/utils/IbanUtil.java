@@ -22,7 +22,7 @@ public class IbanUtil {
     }
 
     public long newAccountNumber() {
-        return (long)(random.nextLong() % MAX_ACCOUNT_NUMBER + 1);
+        return random.nextLong(MAX_ACCOUNT_NUMBER);
     }
 
     public String generateIban(Long accountNumber) {
