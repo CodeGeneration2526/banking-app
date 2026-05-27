@@ -1,12 +1,10 @@
 package nl.inholland.codegen.bankingapp.services;
 
 import nl.inholland.codegen.bankingapp.dtos.*;
-import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
 import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
 import nl.inholland.codegen.bankingapp.exceptions.*;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.User;
-import nl.inholland.codegen.bankingapp.policies.ApproveUsersPolicy;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 
@@ -24,17 +22,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final ApproveUsersPolicy approveUsersPolicy;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil,
-            ApproveUsersPolicy approveUsersPolicy) {
+            JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
 		this.jwtUtil = jwtUtil;
-		this.approveUsersPolicy = approveUsersPolicy;
     }
 
     /**
@@ -85,33 +80,24 @@ public class UserService {
         return userRepository.findById(userId);
     }
 
-    // NOTE: it might be better to name this "approveUser" as it is the main thing it does
-    public User createAccounts(AccountCreationRequest request, User approver)
+    public User updateUser(long userId, UserPatchRequest request)
             throws NotFoundException, BadRequestException {
-        User user = getUser(request.userId()).orElseThrow(() -> new NotFoundException("User not found"));
-
-        approveUsersPolicy.enforceApproveUsersPolicy(user, approver);
-
-        user.setApprovedBy(approver);
-        // TODO: create checking + savings accounts after transaction stuff is implemented
-        // NOTE: it could be worthwhile to handle this in the client
-        // for example, a button which says "create default accounts", which can call POST /accounts
-        return userRepository.save(user);
-    }
-
-    public User updateUser(UserPatchRequest request)
-            throws NotFoundException, BadRequestException {
-        User user = getUser(request.userId())
+        User user = getUser(userId)
             .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.isClosed()) {
             throw new BadRequestException("Cannot update a closed account");
         }
 
-        //Not sure whether or not to still use JSON Patch. The code is minimal. Maybe if we add more to patch request?
         if (request.firstName() != null) user.setFirstName(request.firstName());
         if (request.lastName() != null) user.setLastName(request.lastName());
-        return userRepository.save(user);
+        if (request.email() != null) user.setEmail(request.email());
+
+        try {
+            return userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException("Email is already in use");
+        }
     }
 
     public void deleteUser(long userId) throws NotFoundException {

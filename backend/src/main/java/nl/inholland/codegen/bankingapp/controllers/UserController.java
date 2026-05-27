@@ -8,12 +8,15 @@ import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.services.UserService;
 import nl.inholland.codegen.bankingapp.utils.GetAuthUser;
 
+import jakarta.validation.Valid;
+
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,24 +70,28 @@ public class UserController {
         return ResponseEntity.ok(userResponse);
     }
 
-    @PostMapping
-    @Operation(summary = "Approve customer and create accounts", description = "Creates a checking and savings account for the given customer")
-    public ResponseEntity<Void> createAccounts(@RequestBody AccountCreationRequest request) {
-        User user = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
-        userService.createAccounts(request, user); // TODO: auth needs to be unborked
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-    }
-
     @PatchMapping("{userId}")
     @Operation(summary = "Update specific user", description = "Update values for a specific user.")
-    public ResponseEntity<Void> updateUser(@RequestBody UserPatchRequest request) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable long userId,
+            @Valid @RequestBody UserPatchRequest request) {
+        User authUser = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
 
+        if (authUser.getRole() != User.Role.Employee && authUser.getUserId() != userId) {
+            throw new AuthorizationDeniedException("Not authorized to update this user");
+        }
+
+        User updated = userService.updateUser(userId, request);
+        return ResponseEntity.ok(userMapper.toUserResponse(updated));
     }
 
     @DeleteMapping("{userId}")
     @Operation(summary = "Delete specific user", description = "Deletes a specific user, archiving their account.")
-    public ResponseEntity<Void> deleteUser() {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    @PreAuthorize("hasRole('Employee')")
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable long userId) {
+        userService.deleteUser(userId);
+
+        ApiResponse resp = new ApiResponse("User with the id " + userId + " has been closed");
+        return ResponseEntity.ok(resp);
     }
 }
