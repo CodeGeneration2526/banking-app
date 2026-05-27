@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import nl.inholland.codegen.bankingapp.dtos.TransactionFilter;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.Account;
@@ -60,7 +61,7 @@ public class TransactionService {
         return transactionRepository.save(t);
     }
 
-    public Page<Transaction> getTransactions(User authUser, Long userId, LocalDate dateFrom, LocalDate dateTo, Long accountNumber, Long amountInCents, TransactionSpecifications.AmountFilter amountFilter, Pageable pageable) {
+    public Page<Transaction> getTransactions(User authUser, Long userId, TransactionFilter filter, Pageable pageable) {
         boolean isEmployee = authUser.getRole() == User.Role.Employee;
 
         Specification<Transaction> scope = null;
@@ -70,12 +71,7 @@ public class TransactionService {
             scope = TransactionSpecifications.ownerIs(userId);
         }
 
-        Specification<Transaction> spec = Specification.where(scope);
-        if (dateFrom != null) spec = spec.and(TransactionSpecifications.timestampOnOrAfter(dateFrom.atStartOfDay()));
-        if (dateTo   != null) spec = spec.and(TransactionSpecifications.timestampBefore(dateTo.plusDays(1).atStartOfDay()));
-        if (accountNumber != null) spec = spec.and(TransactionSpecifications.involvesAccountNumber(accountNumber));
-        if (amountInCents != null) spec = spec.and(TransactionSpecifications.amountCompare(amountInCents, amountFilter));
-
+        Specification<Transaction> spec = Specification.where(scope).and(filter.toSpecification());
         return transactionRepository.findAll(spec, pageable);
     }
 
