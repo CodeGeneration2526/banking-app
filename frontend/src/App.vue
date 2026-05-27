@@ -8,7 +8,7 @@
             </ul>
             <ul>
                 <li><RouterLink to="/" class="contrast">Home</RouterLink></li>
-                <li><RouterLink to="/authenticate" class="contrast">Login/Register</RouterLink></li>
+                <li><RouterLink to="/login" class="contrast">Login</RouterLink></li>
             </ul>
         </nav>
     </header>
