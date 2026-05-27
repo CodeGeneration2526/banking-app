@@ -89,16 +89,17 @@ public class AccountController {
     }
 
     @PostMapping
+    @Operation(summary = "Approve customer and create accounts", description = "Approves the given pending customer and creates one checking and one savings account.")
     @PreAuthorize("hasRole('Employee')")
-    public ResponseEntity<AccountDetailResponse> createAccount(@Valid @RequestBody NewAccountRequest request) {
-        User issuer = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
+    public ResponseEntity<ApiResponse> createAccount(@Valid @RequestBody NewAccountRequest request) {
+        User issuer = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
         User accountUser = userService.getUser(request.userId()).orElseThrow(() -> new BadRequestException("userId is invalid"));
 
-        Account account = accountMapper.toModel(request, accountUser);
+        accountService.approveAndCreateAccounts(
+            accountUser, issuer, request.absoluteLimitInCents(), request.dailyLimitInCents());
 
-        Account createdAccount = accountService.createAccount(account, issuer);
-        AccountDetailResponse accountDetailResponse = accountMapper.toAccountDetailResponse(createdAccount);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountDetailResponse);
+        // The created accounts aren't returned at the moment, can be changed later
+        ApiResponse resp = new ApiResponse("User successfully approved and accounts created.");
+        return ResponseEntity.ok(resp);
     }
 }

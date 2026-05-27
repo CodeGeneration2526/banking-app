@@ -1,31 +1,40 @@
 package nl.inholland.codegen.bankingapp.services;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.*;
 import nl.inholland.codegen.bankingapp.policies.AccountCreatePolicy;
+import nl.inholland.codegen.bankingapp.policies.ApproveUsersPolicy;
 import nl.inholland.codegen.bankingapp.repositories.AccountRepository;
+import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.IbanUtil;
 
 @Service
 public class AccountService {
     private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
     private final AccountCreatePolicy accountCreatePolicy;
+    private final ApproveUsersPolicy approveUsersPolicy;
     private final IbanUtil ibanUtil;
 
     public AccountService(
             AccountRepository accountRepository,
+            UserRepository userRepository,
             AccountCreatePolicy accountCreatePolicy,
+            ApproveUsersPolicy approveUsersPolicy,
             IbanUtil ibanUtil
     ) {
         this.accountRepository = accountRepository;
+		this.userRepository = userRepository;
 		this.accountCreatePolicy = accountCreatePolicy;
+		this.approveUsersPolicy = approveUsersPolicy;
 		this.ibanUtil = ibanUtil;
     }
 
@@ -62,5 +71,35 @@ public class AccountService {
 
         accountCreatePolicy.enforceAccountCreatePolicy(account, issuer);
         return accountRepository.save(account);
+    }
+
+    @Transactional
+    public void approveAndCreateAccounts(
+            User user,
+            User issuer,
+            long absoluteLimitInCents,
+            long dailyLimitInCents
+    ) {
+        approveUsersPolicy.enforceApproveUsersPolicy(user, issuer);
+
+        user.setApprovedBy(issuer);
+        userRepository.save(user);
+
+        Account checking = Account.builder()
+            .owner(user)
+            .accountType(Account.AccountType.Checking)
+            .absoluteLimitInCents(absoluteLimitInCents)
+            .dailyLimitInCents(dailyLimitInCents)
+            .build();
+
+        Account savings = Account.builder()
+            .owner(user)
+            .accountType(Account.AccountType.Savings)
+            .absoluteLimitInCents(absoluteLimitInCents)
+            .dailyLimitInCents(dailyLimitInCents)
+            .build();
+
+        createAccount(checking, issuer);
+        createAccount(savings, issuer);
     }
 }

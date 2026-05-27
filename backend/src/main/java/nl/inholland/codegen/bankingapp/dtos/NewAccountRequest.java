@@ -10,15 +10,10 @@ public record NewAccountRequest(
         @NotNull(message = "userId cannot be null")
         Long userId,
 
-        @NotNull(message = "accountType cannot be null")
-        Account.AccountType accountType,
-
         Long absoluteLimitInCents,
-        @Schema(defaultValue = "500000") // NOTE: KEEP IN SYNC WITH DEFAULT_DAILY_LIMIT
-        Long dailyLimitInCents,
 
-        @Schema(defaultValue = "false")
-        Boolean closed
+        @PositiveOrZero(message = "Daily limit cannot be negative")
+        Long dailyLimitInCents
 ) {
     public NewAccountRequest {
         if (absoluteLimitInCents == null) {
@@ -27,10 +22,6 @@ public record NewAccountRequest(
 
         if (dailyLimitInCents == null) {
             dailyLimitInCents = Account.DEFAULT_DAILY_LIMIT;
-        }
-
-        if (closed == null) {
-            closed = false;
         }
     }
 }
