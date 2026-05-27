@@ -29,4 +29,16 @@ public final class TransactionSpecifications {
             cb.equal(root.get("senderAccount").get("iban"), iban),
             cb.equal(root.get("receiverAccount").get("iban"), iban));
     }
+
+    public static Specification<Transaction> amountCompare(long amount, AmountFilter amountFilter) {
+        return (root, query, cb) -> switch (amountFilter) {
+            case LessThan    -> cb.lessThan(root.get("amountInCents"), amount);
+            case EqualTo     -> cb.equal(root.get("amountInCents"), amount);
+            case GreaterThan -> cb.greaterThan(root.get("amountInCents"), amount);
+        };
+    }
+
+    public enum AmountFilter {
+        LessThan, EqualTo, GreaterThan
+    }
 }

@@ -61,20 +61,21 @@ public class TransactionService {
         return transactionRepository.save(t);
     }
 
-    public Page<Transaction> getTransactions(User authUser, Long userIdFilter, LocalDate dateFrom, LocalDate dateTo, String iban, Pageable pageable) {
+    public Page<Transaction> getTransactions(User authUser, Long userId, LocalDate dateFrom, LocalDate dateTo, String iban, Long amountInCents, TransactionSpecifications.AmountFilter amountFilter, Pageable pageable) {
         boolean isEmployee = authUser.getRole() == User.Role.Employee;
 
         Specification<Transaction> scope = null;
         if (!isEmployee) {
             scope = TransactionSpecifications.ownerIs(authUser.getUserId());
-        } else if (userIdFilter != null) {
-            scope = TransactionSpecifications.ownerIs(userIdFilter);
+        } else if (userId != null) {
+            scope = TransactionSpecifications.ownerIs(userId);
         }
 
         Specification<Transaction> spec = Specification.where(scope);
         if (dateFrom != null) spec = spec.and(TransactionSpecifications.timestampOnOrAfter(dateFrom.atStartOfDay()));
         if (dateTo   != null) spec = spec.and(TransactionSpecifications.timestampBefore(dateTo.plusDays(1).atStartOfDay()));
         if (iban != null && !iban.isBlank()) spec = spec.and(TransactionSpecifications.involvesIban(iban));
+        if (amountInCents != null) spec = spec.and(TransactionSpecifications.amountCompare(amountInCents, amountFilter));
 
         return transactionRepository.findAll(spec, pageable);
     }
@@ -87,7 +88,7 @@ public class TransactionService {
         LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
 
         long usedToday = transactionRepository
-            .findBySenderAccount_AccountIdAndTimestampBetween(sender.getAccountId(), startOfDay, startOfNextDay)
+            .findBySenderAccount_AccountIdAndTimestampAfterAndTimestampBefore(sender.getAccountId(), startOfDay, startOfNextDay)
             .stream().mapToLong(Transaction::getAmountInCents).sum();
 
         if (usedToday + amountInCents > sender.getDailyLimitInCents()) {

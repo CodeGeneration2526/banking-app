@@ -72,6 +72,22 @@ public class DataSeeder implements ApplicationRunner {
                 .bsn("555555555").password(passwordEncoder.encode("Customer1!"))
                 .approvedBy(emp2).build());
 
+        // Unapproved customers (no accounts, approvedBy left null)
+        userRepository.save(User.builder()
+                .firstName("Diana").lastName("Prince")
+                .email("diana.prince@email.com").phoneNumber("+31666666666")
+                .bsn("666666666").password(passwordEncoder.encode("Customer1!")).build());
+
+        userRepository.save(User.builder()
+                .firstName("Ethan").lastName("Hunt")
+                .email("ethan.hunt@email.com").phoneNumber("+31677777777")
+                .bsn("777777777").password(passwordEncoder.encode("Customer1!")).build());
+
+        userRepository.save(User.builder()
+                .firstName("Fiona").lastName("Green")
+                .email("fiona.green@email.com").phoneNumber("+31688888888")
+                .bsn("888888888").password(passwordEncoder.encode("Customer1!")).build());
+
         // Accounts — balances and limits in cents
         //   dailyLimit: €1,000  absoluteLimit: €-100
         Account aliceChecking  = saveAccount(alice,   Account.AccountType.Checking, "NL91INGB0001000001", 150000L,  100000L, -10000L);
