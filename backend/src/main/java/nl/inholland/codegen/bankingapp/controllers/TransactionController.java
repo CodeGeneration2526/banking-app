@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import nl.inholland.codegen.bankingapp.dtos.TransactionFilter;
 import nl.inholland.codegen.bankingapp.dtos.TransactionRequest;
 import nl.inholland.codegen.bankingapp.dtos.TransactionResponse;
 import nl.inholland.codegen.bankingapp.exceptions.AuthenticationException;
@@ -75,9 +76,10 @@ public class TransactionController {
         User authUser = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
 
         Long accountNumber = (account == null || account.isBlank()) ? null : ibanUtil.resolveAccountNumber(account);
+        TransactionFilter filter = new TransactionFilter(dateFrom, dateTo, accountNumber, amountInCents, amountFilter);
 
         Page<TransactionResponse> response = transactionService
-            .getTransactions(authUser, userId, dateFrom, dateTo, accountNumber, amountInCents, amountFilter, pageable)
+            .getTransactions(authUser, userId, filter, pageable)
             .map(transactionMapper::toTransactionResponse);
 
         return ResponseEntity.ok(new PagedModel<>(response));
