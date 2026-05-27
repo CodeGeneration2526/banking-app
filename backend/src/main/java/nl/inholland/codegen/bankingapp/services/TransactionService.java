@@ -60,14 +60,12 @@ public class TransactionService {
     public Page<Transaction> getTransactions(User authUser, Long userId, TransactionFilter filter, Pageable pageable) {
         boolean isEmployee = authUser.getRole() == User.Role.Employee;
 
-        Specification<Transaction> scope = null;
+        Specification<Transaction> spec = filter.toSpecification();
         if (!isEmployee) {
-            scope = TransactionSpecifications.ownerIs(authUser.getUserId());
+            spec = TransactionSpecifications.ownerIs(authUser.getUserId()).and(spec);
         } else if (userId != null) {
-            scope = TransactionSpecifications.ownerIs(userId);
+            spec = TransactionSpecifications.ownerIs(userId).and(spec);
         }
-
-        Specification<Transaction> spec = Specification.where(scope).and(filter.toSpecification());
         return transactionRepository.findAll(spec, pageable);
     }
 
