@@ -16,7 +16,7 @@
         <RouterView />
     </main>
     <footer>
-        <small>&#169; Jonathan Mauracio<br></small>
+        <small>&#169; Jonathan Mauricio<br></small>
         <small>&#169; Kunal Dandekar<br></small>
         <small>Licensed under the GNU <a class="secondary" target="_blank" href="https://www.gnu.org/licenses/agpl-3.0.en.html">AGPL-3.0-or-later</a> license</small>
     </footer>
