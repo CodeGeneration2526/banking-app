@@ -24,10 +24,10 @@ public final class TransactionSpecifications {
         return (root, query, cb) -> cb.lessThan(root.get("timestamp"), end);
     }
 
-    public static Specification<Transaction> involvesIban(String iban) {
+    public static Specification<Transaction> involvesAccountNumber(long accountNumber) {
         return (root, query, cb) -> cb.or(
-            cb.equal(root.get("senderAccount").get("iban"), iban),
-            cb.equal(root.get("receiverAccount").get("iban"), iban));
+            cb.equal(root.get("senderAccount").get("accountNumber"), accountNumber),
+            cb.equal(root.get("receiverAccount").get("accountNumber"), accountNumber));
     }
 
     public static Specification<Transaction> amountCompare(long amount, AmountFilter amountFilter) {

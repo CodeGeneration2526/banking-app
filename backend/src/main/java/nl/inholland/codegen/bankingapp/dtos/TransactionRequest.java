@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Positive;
 
 public record TransactionRequest (
 
-    @NotBlank(message = "fromIban is required")
-    String fromIban,
+    @NotBlank(message = "from is required")
+    String from,
 
-    @NotBlank(message = "toIban is required")
-    String toIban,
+    @NotBlank(message = "to is required")
+    String to,
 
     @Positive(message = "amountInCents must be positive")
     long amountInCents)

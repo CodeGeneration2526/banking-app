@@ -9,7 +9,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import nl.inholland.codegen.bankingapp.dtos.TransactionRequest;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.Account;
@@ -30,11 +29,11 @@ public class TransactionService {
     }
 
     @Transactional
-    public Transaction executeTransaction(TransactionRequest req, User initiator) {
+    public Transaction executeTransaction(long fromAccountNumber, long toAccountNumber, long amountInCents, User initiator) {
         //TODO: Migrate error checking to make use of policies after PR merge
-        Account sender = accountRepository.findByIban(req.fromIban())
+        Account sender = accountRepository.findByAccountNumber(fromAccountNumber)
             .orElseThrow(() -> new NotFoundException("From account not found"));
-        Account receiver = accountRepository.findByIban(req.toIban())
+        Account receiver = accountRepository.findByAccountNumber(toAccountNumber)
             .orElseThrow(() -> new NotFoundException("To account not found"));
 
         if (Boolean.TRUE.equals(sender.getClosed()) || Boolean.TRUE.equals(receiver.getClosed())) {
@@ -43,25 +42,25 @@ public class TransactionService {
 
         validateTransfer(initiator, sender, receiver);
 
-        if (sender.getStoredAmountInCents() - req.amountInCents() < sender.getAbsoluteLimitInCents()) {
+        if (sender.getStoredAmountInCents() - amountInCents < sender.getAbsoluteLimitInCents()) {
             throw new BadRequestException("Transfer would drop balance below absolute limit");
         }
 
-        dailyLimitCheck(sender, req.amountInCents());
+        dailyLimitCheck(sender, amountInCents);
 
-        sender.setStoredAmountInCents(sender.getStoredAmountInCents() - req.amountInCents());
-        receiver.setStoredAmountInCents(receiver.getStoredAmountInCents() + req.amountInCents());
+        sender.setStoredAmountInCents(sender.getStoredAmountInCents() - amountInCents);
+        receiver.setStoredAmountInCents(receiver.getStoredAmountInCents() + amountInCents);
 
         Transaction t = new Transaction();
         t.setSenderAccount(sender);
         t.setReceiverAccount(receiver);
-        t.setAmountInCents(req.amountInCents());
+        t.setAmountInCents(amountInCents);
         t.setTimestamp(LocalDateTime.now());
         t.setInitiatedBy(initiator);
         return transactionRepository.save(t);
     }
 
-    public Page<Transaction> getTransactions(User authUser, Long userId, LocalDate dateFrom, LocalDate dateTo, String iban, Long amountInCents, TransactionSpecifications.AmountFilter amountFilter, Pageable pageable) {
+    public Page<Transaction> getTransactions(User authUser, Long userId, LocalDate dateFrom, LocalDate dateTo, Long accountNumber, Long amountInCents, TransactionSpecifications.AmountFilter amountFilter, Pageable pageable) {
         boolean isEmployee = authUser.getRole() == User.Role.Employee;
 
         Specification<Transaction> scope = null;
@@ -74,7 +73,7 @@ public class TransactionService {
         Specification<Transaction> spec = Specification.where(scope);
         if (dateFrom != null) spec = spec.and(TransactionSpecifications.timestampOnOrAfter(dateFrom.atStartOfDay()));
         if (dateTo   != null) spec = spec.and(TransactionSpecifications.timestampBefore(dateTo.plusDays(1).atStartOfDay()));
-        if (iban != null && !iban.isBlank()) spec = spec.and(TransactionSpecifications.involvesIban(iban));
+        if (accountNumber != null) spec = spec.and(TransactionSpecifications.involvesAccountNumber(accountNumber));
         if (amountInCents != null) spec = spec.and(TransactionSpecifications.amountCompare(amountInCents, amountFilter));
 
         return transactionRepository.findAll(spec, pageable);
