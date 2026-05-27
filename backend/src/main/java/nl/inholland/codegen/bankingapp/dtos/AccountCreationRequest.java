@@ -3,8 +3,7 @@ package nl.inholland.codegen.bankingapp.dtos;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-public record AccountCreationRequest (
-
+public record AccountCreationRequest(
     @Positive(message = "userId must be positive")
     long userId,
 

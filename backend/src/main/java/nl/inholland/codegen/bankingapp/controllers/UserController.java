@@ -6,8 +6,7 @@ import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.mappers.UserMapper;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.services.UserService;
-
-import java.util.Optional;
+import nl.inholland.codegen.bankingapp.utils.GetAuthUser;
 
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.*;
@@ -15,8 +14,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,10 +25,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
+    private final GetAuthUser getAuthUser;
 
-    public UserController(UserService userService, UserMapper userMapper) {
+    public UserController(UserService userService, UserMapper userMapper, GetAuthUser getAuthUser) {
         this.userService = userService;
 		this.userMapper = userMapper;
+		this.getAuthUser = getAuthUser;
     }
 
 
@@ -57,7 +56,7 @@ public class UserController {
     @GetMapping("me")
     @Operation(summary = "Get one user", description = "Returns info on the logged in user.")
     public ResponseEntity<UserResponse> getSelfUser() {
-        User authUser = getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User authUser = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
 
         // this will likely be the same as authUser, but it could very well not be in some cases
         User user = userService.getUser(authUser.getUserId())
@@ -71,7 +70,7 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Approve customer and create accounts", description = "Creates a checking and savings account for the given customer")
     public ResponseEntity<Void> createAccounts(@RequestBody AccountCreationRequest request) {
-        User user = getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User user = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
         userService.createAccounts(request, user); // TODO: auth needs to be unborked
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
@@ -87,16 +86,5 @@ public class UserController {
     @Operation(summary = "Delete specific user", description = "Deletes a specific user, archiving their account.")
     public ResponseEntity<Void> deleteUser() {
         return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-    }
-
-    private Optional<User> getAuthUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
-            return Optional.empty();
-        }
-
-        User user = (User)authentication.getPrincipal();
-        return Optional.of(user);
     }
 }

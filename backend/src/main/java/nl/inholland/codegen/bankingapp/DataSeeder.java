@@ -6,6 +6,8 @@ import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.AccountRepository;
 import nl.inholland.codegen.bankingapp.repositories.TransactionRepository;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
+import nl.inholland.codegen.bankingapp.utils.IbanUtil;
+
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,13 +23,16 @@ public class DataSeeder implements ApplicationRunner {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final IbanUtil ibanUtil;
 
     public DataSeeder(UserRepository userRepository, AccountRepository accountRepository,
-                      TransactionRepository transactionRepository, PasswordEncoder passwordEncoder) {
+                      TransactionRepository transactionRepository, PasswordEncoder passwordEncoder,
+                      IbanUtil ibanUtil) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.passwordEncoder = passwordEncoder;
+		this.ibanUtil = ibanUtil;
     }
 
     @Override
@@ -69,12 +74,12 @@ public class DataSeeder implements ApplicationRunner {
 
         // Accounts — balances and limits in cents
         //   dailyLimit: €1,000  absoluteLimit: €-100
-        Account aliceChecking  = saveAccount(alice,   Account.AccountType.Checking, "NL91INGB0001000001", 1000001L, 150000L,  100000L, -10000L);
-        Account aliceSavings   = saveAccount(alice,   Account.AccountType.Savings,  "NL91INGB0001000002", 1000002L, 250000L,  100000L,      0L);
-        Account bobChecking    = saveAccount(bob,     Account.AccountType.Checking, "NL91INGB0001000003", 1000003L,  75000L,  100000L, -10000L);
-        Account bobSavings     = saveAccount(bob,     Account.AccountType.Savings,  "NL91INGB0001000004", 1000004L, 320000L,  100000L,      0L);
-        Account charlieChecking = saveAccount(charlie, Account.AccountType.Checking, "NL91INGB0001000005", 1000005L, 430000L, 100000L, -10000L);
-        Account charlieSavings  = saveAccount(charlie, Account.AccountType.Savings,  "NL91INGB0001000006", 1000006L, 120000L, 100000L,      0L);
+        Account aliceChecking  = saveAccount(alice,   Account.AccountType.Checking, "NL91INGB0001000001", 150000L,  100000L, -10000L);
+        Account aliceSavings   = saveAccount(alice,   Account.AccountType.Savings,  "NL91INGB0001000002", 250000L,  100000L,      0L);
+        Account bobChecking    = saveAccount(bob,     Account.AccountType.Checking, "NL91INGB0001000003",  75000L,  100000L, -10000L);
+        Account bobSavings     = saveAccount(bob,     Account.AccountType.Savings,  "NL91INGB0001000004", 320000L,  100000L,      0L);
+        Account charlieChecking = saveAccount(charlie, Account.AccountType.Checking, "NL91INGB0001000005", 430000L, 100000L, -10000L);
+        Account charlieSavings  = saveAccount(charlie, Account.AccountType.Savings,  "NL91INGB0001000006", 120000L, 100000L,      0L);
 
         // Transactions spread across last 30 days, initiated by emp1
         List<Account> accts = List.of(
@@ -113,9 +118,10 @@ public class DataSeeder implements ApplicationRunner {
         }
     }
 
-    private Account saveAccount(User owner, Account.AccountType type, String iban,
-                                 long accountNumber, long balanceCents,
+    private Account saveAccount(User owner, Account.AccountType type, String iban, long balanceCents,
                                  long dailyLimitCents, long absoluteLimitCents) {
+        long accountNumber = ibanUtil.newAccountNumber();
+
         Account a = new Account();
         a.setOwner(owner);
         a.setAccountType(type);
@@ -124,8 +130,13 @@ public class DataSeeder implements ApplicationRunner {
         a.setStoredAmountInCents(balanceCents);
         a.setDailyLimitInCents(dailyLimitCents);
         a.setAbsoluteLimitInCents(absoluteLimitCents);
-        a.setCreationDate(LocalDateTime.now());
+        // a.setCreationDate(LocalDateTime.now());
         a.setClosed(false);
+
+        if (type == Account.AccountType.Checking) {
+            a.setIban(ibanUtil.generateIban(accountNumber));
+        }
+
         return accountRepository.save(a);
     }
 }
