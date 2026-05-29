@@ -9,6 +9,8 @@
             <ul>
                 <li><RouterLink to="/" class="contrast">Home</RouterLink></li>
                 <li><RouterLink to="/login" class="contrast">Login</RouterLink></li>
+<!--              Change this to require auth (for users  too) later-->
+                <li><RouterLink to="/employee" class="contrast">Employee Dashboard</RouterLink></li>
             </ul>
         </nav>
     </header>
