@@ -196,18 +196,18 @@ export interface components {
             from: string;
             to: string;
             /** Format: int64 */
-            amountInCents?: number;
+            amountInCents: number;
         };
         TransactionResponse: {
             /** Format: int64 */
-            transactionId?: number;
-            from?: string;
-            to?: string;
+            transactionId: number;
+            from: string;
+            to: string;
             /** Format: int64 */
-            amountInCents?: number;
+            amountInCents: number;
             /** Format: date-time */
-            timestamp?: string;
-            initiatedBy?: string;
+            timestamp: string;
+            initiatedBy: string;
         };
         RegisterRequest: {
             firstName: string;
@@ -216,21 +216,20 @@ export interface components {
             email: string;
             password: string;
             bsn: string;
-            phoneNumber?: string;
+            phoneNumber: string;
         };
         UserResponse: {
             /** Format: int64 */
-            userId?: number;
-            firstName?: string;
-            lastName?: string;
-            email?: string;
-            phoneNumber?: string;
-            /** Format: int32 */
-            bsn?: number;
+            userId: number;
+            firstName: string;
+            lastName: string;
+            email: string;
+            phoneNumber: string;
+            bsn: string;
             /** @enum {string} */
-            role?: "Customer" | "Employee";
+            role: "Customer" | "Employee";
             /** Format: date-time */
-            registrationDate?: string;
+            registrationDate: string;
         };
         LoginRequest: {
             /** Format: email */
@@ -238,7 +237,7 @@ export interface components {
             password: string;
         };
         LoginResponse: {
-            token?: string;
+            token: string;
         };
         NewAccountRequest: {
             /** Format: int64 */
@@ -252,7 +251,7 @@ export interface components {
             dailyLimitInCents: number;
         };
         ApiResponse: {
-            message?: string;
+            message: string;
         };
         UserPatchRequest: {
             firstName?: string;
@@ -269,17 +268,17 @@ export interface components {
         };
         AccountDetailResponse: {
             /** Format: int64 */
-            accountId?: number;
+            accountId: number;
             iban?: string;
-            accountType?: string;
+            accountType: string;
             /** Format: int64 */
-            storedAmountInCents?: number;
+            storedAmountInCents: number;
             /** Format: int64 */
-            userId?: number;
+            userId: number;
             /** Format: int32 */
-            absoluteLimitInCents?: number;
+            absoluteLimitInCents: number;
             /** Format: int32 */
-            dailyLimitInCents?: number;
+            dailyLimitInCents: number;
         };
         PageMetadata: {
             /** Format: int64 */
@@ -301,9 +300,9 @@ export interface components {
         };
         AccountSummaryResponse: {
             /** Format: int64 */
-            accountId?: number;
+            accountId: number;
             iban?: string;
-            accountType?: string;
+            accountType: string;
         };
         PagedModelAccountSummaryResponse: {
             content?: components["schemas"]["AccountSummaryResponse"][];
