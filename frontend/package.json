@@ -1,4 +1,4 @@
-{
+  {
     "name": "frontend",
     "version": "0.0.0",
     "private": true,
@@ -9,6 +9,7 @@
         "preview": "vite preview",
         "build-only": "vite build",
         "type-check": "vue-tsc --build",
+        "gen:api": "node --env-file-if-exists=.env scripts/gen-api.mjs",
         "format": "oxfmt src/ package.json .oxfmtrc.json"
     },
     "dependencies": {
@@ -23,6 +24,7 @@
         "@vitejs/plugin-vue": "^6.0.5",
         "@vue/tsconfig": "^0.9.1",
         "npm-run-all2": "^8.0.4",
+        "openapi-typescript": "^7.13.0",
         "oxfmt": "^0.42.0",
         "sass": "^1.100.0",
         "typescript": "~6.0.0",
