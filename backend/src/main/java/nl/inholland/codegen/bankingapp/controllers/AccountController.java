@@ -1,20 +1,25 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.*;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import jakarta.validation.Valid;
+
 import nl.inholland.codegen.bankingapp.dtos.*;
-import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
+import nl.inholland.codegen.bankingapp.exceptions.*;
+import nl.inholland.codegen.bankingapp.models.*;
+import nl.inholland.codegen.bankingapp.services.*;
 import nl.inholland.codegen.bankingapp.mappers.AccountMapper;
-import nl.inholland.codegen.bankingapp.services.AccountService;
+import nl.inholland.codegen.bankingapp.utils.GetAuthUser;
 
 @RestController
 @RequestMapping("/accounts")
@@ -22,11 +27,20 @@ import nl.inholland.codegen.bankingapp.services.AccountService;
 public class AccountController {
 
     private final AccountService accountService;
+    private final UserService userService;
     private final AccountMapper accountMapper;
+    private final GetAuthUser getAuthUser;
 
-    public AccountController(AccountService accountService, AccountMapper accountMapper) {
+    public AccountController(
+            AccountService accountService,
+            UserService userService,
+            AccountMapper accountMapper,
+            GetAuthUser getAuthUser
+    ) {
 		this.accountService = accountService;
+		this.userService = userService;
 		this.accountMapper = accountMapper;
+		this.getAuthUser = getAuthUser;
 	}
 
 
@@ -38,11 +52,9 @@ public class AccountController {
             @RequestParam(required = false) String iban,
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int pageSize)
+            @ParameterObject @PageableDefault(size = 10, sort = "accountId", direction = Sort.Direction.DESC) Pageable pageable
+    )
     {
-        Pageable pageable = PageRequest.of(page, pageSize);
-
         Page<AccountSummaryResponse> resp = accountService.searchCheckingAccounts(firstName, lastName, iban, pageable)
             .map(accountMapper::toAccountSummaryResponse);
 
@@ -73,6 +85,21 @@ public class AccountController {
         accountService.closeAccount(accountId);
 
         ApiResponse resp = new ApiResponse("Account with the id " + accountId + " has been closed");
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping
+    @Operation(summary = "Approve customer and create accounts", description = "Approves the given pending customer and creates one checking and one savings account.")
+    @PreAuthorize("hasRole('Employee')")
+    public ResponseEntity<ApiResponse> createAccount(@Valid @RequestBody NewAccountRequest request) {
+        User issuer = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User accountUser = userService.getUser(request.userId()).orElseThrow(() -> new BadRequestException("userId is invalid"));
+
+        accountService.approveAndCreateAccounts(
+            accountUser, issuer, request.absoluteLimitInCents(), request.dailyLimitInCents());
+
+        // The created accounts aren't returned at the moment, can be changed later
+        ApiResponse resp = new ApiResponse("User successfully approved and accounts created.");
         return ResponseEntity.ok(resp);
     }
 }
