@@ -11,6 +11,7 @@ import nl.inholland.codegen.bankingapp.utils.GetAuthUser;
 import jakarta.validation.Valid;
 
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
@@ -41,9 +42,20 @@ public class UserController {
     @Operation(summary = "Get all users", description = "Returns all user accounts.")
     @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<PagedModel<UserResponse>> getAllUsers(
+            @RequestParam(required = false) Boolean isApproved,
+            @RequestParam(required = false) User.Role role,
             @ParameterObject @PageableDefault(size = 10, sort = "registrationDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<UserResponse> response = userService.getAllUsers(true, pageable).map(userMapper::toUserResponse);
+
+        // I can use a specification here, but this is truly very simple logic and complexity is not needed at this point
+        // if I add ONE more filter option, then I will add a specificatoion
+        Page<UserResponse> response;
+        if (role == null) {
+            response = userService.getAllUsers(isApproved, pageable).map(userMapper::toUserResponse);
+        } else {
+            response = userService.getAllUsers(isApproved, role, pageable).map(userMapper::toUserResponse);
+        }
+
         return ResponseEntity.ok(new PagedModel<>(response));
     }
 

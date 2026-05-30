@@ -60,19 +60,27 @@ public class UserService {
     }
 
 
-    public Page<User> getAllApprovedUsers(Pageable pageable) {
-        return getAllUsers(true, pageable);
+    public Page<User> getAllUsers(Boolean isApproved, User.Role role, Pageable pageable) {
+        // If it's null, return all users regardless of approval status
+        if (isApproved == null) return userRepository.findByRole(role, pageable);
+        if (isApproved) {
+            // If it's true return all approved users
+            return userRepository.findByRoleAndApprovedByIsNotNull(role, pageable);
+        } else {
+            // If it's false return all users waiting to be approved
+            return userRepository.findByRoleAndApprovedByIsNull(role, pageable);
+        }
     }
 
     public Page<User> getAllUsers(Boolean isApproved, Pageable pageable) {
         // If it's null, return all users regardless of approval status
-        if (isApproved == null) return userRepository.findByRole(User.Role.Customer, pageable);
+        if (isApproved == null) return userRepository.findAll(pageable);
         if (isApproved) {
             // If it's true return all approved users
-            return userRepository.findByRoleAndApprovedByIsNotNull(User.Role.Customer, pageable);
+            return userRepository.findByApprovedByIsNotNull(pageable);
         } else {
             // If it's false return all users waiting to be approved
-            return userRepository.findByRoleAndApprovedByIsNull(User.Role.Customer, pageable);
+            return userRepository.findByApprovedByIsNull(pageable);
         }
     }
 
