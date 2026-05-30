@@ -14,4 +14,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findByRole(User.Role role, Pageable pageable);
     Page<User> findByRoleAndApprovedByIsNull(User.Role role, Pageable pageable);
     Page<User> findByRoleAndApprovedByIsNotNull(User.Role role, Pageable pageable);
+
+
+    Page<User> findByApprovedByIsNull(Pageable pageable);
+    Page<User> findByApprovedByIsNotNull(Pageable pageable);
 }
