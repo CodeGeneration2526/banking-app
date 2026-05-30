@@ -1,10 +1,10 @@
 package nl.inholland.codegen.bankingapp.services;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,8 +44,12 @@ public class AccountService {
             String iban,
             Pageable pageable
     ) {
-        Account.AccountType accountType = Account.AccountType.Checking;
-        return accountRepository.search(firstName, lastName, iban, accountType, pageable);
+        Specification<Account> spec = Specification.where(AccountSpecifications.isCheckingAccount())
+            .and(AccountSpecifications.firstNameContains(firstName))
+            .and(AccountSpecifications.lastNameContains(lastName))
+            .and(AccountSpecifications.ibanEquals(iban));
+
+        return accountRepository.findAll(spec, pageable);
     }
 
     public Optional<Account> getAccountInfo(long accountId) {
