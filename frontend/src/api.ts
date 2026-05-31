@@ -2,6 +2,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 import type { LoginResponse, User } from "@/types/api";
 import { useAuthStore } from "@/stores/auth";
+import router from "@/router";
 
 async function request<T>(path: string, options: RequestInit): Promise<T> {
     const auth = useAuthStore();
@@ -17,6 +18,11 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
     });
 
     if (!response.ok) {
+        // JWT Token expiration check
+        if (response.status === 401) {
+            auth.clearToken();
+            router.push({ name: "login" });
+        }
         throw new Error(JSON.stringify(response.json()));
         // TODO: do error handling with various Error types
     }
