@@ -26,9 +26,8 @@ async function handleLogin() {
         );
 
         auth.setToken(response.token);
-
-        // adding this to showcase how to use the endpoints which require auth
-        console.debug(await api.users.me());
+        // If a token is set but the api calls fail it's set to null atm, could be worth fixing or checking later
+        auth.setCurrentUser(await api.users.me());
     } catch (e) {
         console.error(e);
         error.value = JSON.stringify(e);

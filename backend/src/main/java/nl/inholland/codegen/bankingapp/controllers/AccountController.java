@@ -63,6 +63,7 @@ public class AccountController {
 
     @GetMapping("{accountId}")
     @Operation(summary = "Get account details", description = "Returns details for a single customer account.")
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<AccountDetailResponse> getAccountInfo(@PathVariable long accountId) {
         AccountDetailResponse account = accountService.getAccountInfo(accountId)
             .map(accountMapper::toAccountDetailResponse)
@@ -73,6 +74,7 @@ public class AccountController {
 
     @PatchMapping("{accountId}")
     @Operation(summary = "Update specific savings or checking account", description = "Updates the absolute limit, daily limit, or closed status of an account.")
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<AccountDetailResponse> updateAccount(
             @PathVariable long id,
             @RequestBody UpdateAccountRequest request) {
@@ -81,6 +83,7 @@ public class AccountController {
 
     @DeleteMapping("{accountId}")
     @Operation(summary = "Close an account", description = "Employee can close a specific account from an user.")
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<ApiResponse> closeAccount(@PathVariable long accountId) {
         accountService.closeAccount(accountId);
 
