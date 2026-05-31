@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { api } from '@/api';
 import { useAuthStore } from '@/stores/auth';
+import { useRouter } from 'vue-router';
 import { ref } from 'vue';
 
 const email = ref("");
@@ -9,6 +10,7 @@ const error = ref("");
 const loading = ref(false);
 
 const auth = useAuthStore();
+const router = useRouter();
 
 if (auth.isAuthenticated) {
     console.log("User is already authenticated");
@@ -28,6 +30,9 @@ async function handleLogin() {
         auth.setToken(response.token);
         // If a token is set but the api calls fail it's set to null atm, could be worth fixing or checking later
         auth.setCurrentUser(await api.users.me());
+
+        if (auth.isEmployee) router.push({ name: "employee" });
+    //     TODO: handle user login
     } catch (e) {
         console.error(e);
         error.value = JSON.stringify(e);

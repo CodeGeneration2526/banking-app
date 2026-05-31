@@ -10,6 +10,7 @@ export const useAuthStore = defineStore("auth", {
     }),
     getters: {
         isAuthenticated: state => Boolean(state.token),
+        isEmployee: state => state.currentUser?.role === "Employee",
     },
     actions: {
         setToken(token: string) {

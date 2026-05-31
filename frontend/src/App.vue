@@ -1,4 +1,16 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+
+const auth = useAuthStore();
+const router = useRouter();
+
+function handleLogout() {
+    auth.clearToken();
+    router.push({ name: "login" });
+}
+
+</script>
 
 <template>
     <header>
@@ -8,9 +20,16 @@
             </ul>
             <ul>
                 <li><RouterLink to="/" class="contrast">Home</RouterLink></li>
-                <li><RouterLink to="/login" class="contrast">Login</RouterLink></li>
-<!--              Change this to require auth (for users  too) later-->
-                <li><RouterLink to="/employee" class="contrast">Employee Dashboard</RouterLink></li>
+                <li v-if="auth.isEmployee"><RouterLink to="/employee" class="contrast">Employee Dashboard</RouterLink></li>
+                <li v-if="auth.isAuthenticated">
+                    <details class="dropdown">
+                        <summary class="contrast">Account</summary>
+                        <ul>
+                            <li><a href="#" @click.prevent="handleLogout">Logout</a></li>
+                        </ul>
+                    </details>
+                </li>
+                <li v-else><RouterLink to="/login" class="contrast">Login</RouterLink></li>
             </ul>
         </nav>
     </header>
