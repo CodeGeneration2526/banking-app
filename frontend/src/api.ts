@@ -2,6 +2,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 import type {
     LoginResponse,
+    RegisterRequest,
     User,
     UsersPage,
     NewAccountRequest,
@@ -70,6 +71,11 @@ export const api = {
                 body: JSON.stringify({ email, password }),
             });
         },
+        register: (body: RegisterRequest) =>
+            request<User>("/auth/register", {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
     },
     users: {
         // Fetch currently logged in user

@@ -21,9 +21,12 @@ function handleLogout() {
             <ul>
                 <li><RouterLink to="/" class="contrast">Home</RouterLink></li>
                 <li v-if="auth.isEmployee"><RouterLink to="/employee" class="contrast">Employee Dashboard</RouterLink></li>
-                <li v-if="auth.isAuthenticated"><RouterLink to="/accounts" class="contrast">Accounts</RouterLink></li>
+                <li v-if="auth.isAuthenticated && (auth.isEmployee || auth.currentUser?.approvedBy)">
+                    <RouterLink to="/accounts" class="contrast">Accounts</RouterLink>
+                </li>
                 <li v-if="auth.isAuthenticated"><a @click.prevent="handleLogout" style="cursor:pointer" class="contrast">Logout</a></li>
-                <li v-else><RouterLink to="/login" class="contrast">Login</RouterLink></li>
+                <li v-if="!auth.isAuthenticated"><RouterLink to="/login" class="contrast">Login</RouterLink></li>
+                <li v-if="!auth.isAuthenticated"><RouterLink to="/register" class="contrast">Register</RouterLink></li>
             </ul>
         </nav>
     </header>

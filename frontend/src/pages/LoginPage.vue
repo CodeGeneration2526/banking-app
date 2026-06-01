@@ -15,6 +15,8 @@ const router = useRouter();
 function redirectUser() {
     if (auth.isEmployee) {
         router.push({ name: "employee" });
+    } else if (auth.currentUser?.role === "Customer" && !auth.currentUser?.approvedBy) {
+        router.push({ name: "home" });
     } else {
         router.push({ name: "accounts" });
     }
@@ -68,6 +70,9 @@ async function handleLogin() {
         <p v-if="error">{{error}}</p>
 
         <input type="submit" value="Login" :disabled="loading" />
+        <p class="register-link">
+            New here? <RouterLink to="/register">Create an account</RouterLink>
+        </p>
     </form>
 </template>
 
@@ -75,5 +80,9 @@ async function handleLogin() {
 form {
     max-width: 32rem;
     margin: 0 auto;
+}
+
+.register-link {
+    margin-top: 0.75rem;
 }
 </style>

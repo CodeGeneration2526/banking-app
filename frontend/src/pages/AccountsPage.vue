@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { api } from '@/api';
 import { useAuthStore } from '@/stores/auth';
-import type { AccountDetail, AccountSummary } from '@/types/api';
+import type { AccountDetail, AccountSummary, AmountFilter, Transaction } from '@/types/api';
+import { formatCents } from '@/utils/money';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -28,6 +29,20 @@ const searchError = ref("");
 const searchPage = ref(0);
 const searchTotalPages = ref(0);
 const SEARCH_PAGE_SIZE = 8;
+
+const transactions = ref<Transaction[]>([]);
+const txLoading = ref(false);
+const txError = ref("");
+const txPage = ref(0);
+const txTotalPages = ref(0);
+const TX_PAGE_SIZE = 10;
+
+const txAccount = ref("");
+const txDateFrom = ref("");
+const txDateTo = ref("");
+const txAmountEuros = ref("");
+const txAmountFilter = ref<AmountFilter>("EqualTo");
+const dateFormat = new Intl.DateTimeFormat("en-NL", { dateStyle: "medium", timeStyle: "short" });
 
 const currentUserId = computed(() => auth.currentUser?.userId ?? null);
 
@@ -92,6 +107,11 @@ async function loadAccounts() {
         return;
     }
 
+    if (auth.currentUser.role === "Customer" && !auth.currentUser.approvedBy) {
+        router.push({ name: "home" });
+        return;
+    }
+
     let page = 0;
     let totalPages = 1;
 
@@ -147,6 +167,37 @@ async function loadUserSearchResults() {
     }
 }
 
+async function loadTransactions() {
+    txLoading.value = true;
+    txError.value = "";
+    try {
+        const amountValue = String(txAmountEuros.value ?? "").trim();
+        const amountInCents = amountValue ? Math.round(Number(amountValue) * 100) : undefined;
+
+        const result = await api.transactions.list({
+            page: txPage.value,
+            size: TX_PAGE_SIZE,
+            account: txAccount.value.trim() || undefined,
+            dateFrom: txDateFrom.value || undefined,
+            dateTo: txDateTo.value || undefined,
+            amountInCents,
+            amountFilter: amountInCents !== undefined ? txAmountFilter.value : undefined,
+        });
+
+        transactions.value = result.content ?? [];
+        txTotalPages.value = result.page?.totalPages ?? 0;
+
+        if (transactions.value.length === 0 && txPage.value > 0) {
+            txPage.value--;
+            await loadTransactions();
+        }
+    } catch (e) {
+        txError.value = e instanceof Error ? e.message : "Failed to load transactions.";
+    } finally {
+        txLoading.value = false;
+    }
+}
+
 function openUserSearch() {
     showUserSearch.value = true;
     searchError.value = "";
@@ -183,8 +234,34 @@ function goToSearchPage(index: number) {
     loadUserSearchResults();
 }
 
+function goToTxPage(index: number) {
+    txPage.value = index;
+    loadTransactions();
+}
 
-onMounted(loadAccounts);
+function searchTransactions() {
+    txPage.value = 0;
+    loadTransactions();
+}
+
+function resetTransactions() {
+    txAccount.value = "";
+    txDateFrom.value = "";
+    txDateTo.value = "";
+    txAmountEuros.value = "";
+    txAmountFilter.value = "EqualTo";
+    searchTransactions();
+}
+
+const hasTxFilters = computed(() =>
+    !!(txAccount.value || txDateFrom.value || txDateTo.value || txAmountEuros.value),
+);
+
+
+onMounted(() => {
+    loadAccounts();
+    loadTransactions();
+});
 
 function showTransfer(account: AccountDetail) {
     transferState.value = account;
@@ -310,6 +387,7 @@ async function submitTransfer() {
         closeTransfer();
         successMessage.value = "Transfer completed successfully.";
         await loadAccounts();
+        await loadTransactions();
     } catch (e) {
         transferError.value = e instanceof Error ? e.message : "Failed to execute transfer.";
     } finally {
@@ -325,7 +403,7 @@ async function submitTransfer() {
     <div v-if="accounts.length" class="accounts-grid">
         <article v-for="account in accounts" :key="account.accountId" class="account-card">
             <span class="account-type">{{ account.accountType }}</span>
-            <span class="account-balance">&euro;{{ (account.storedAmountInCents / 100).toFixed(2) }}</span>
+            <span class="account-balance">{{ formatCents(account.storedAmountInCents) }}</span>
             <span class="account-iban">{{ account.iban ?? account.accountNumber }}</span>
             <div class="spacer"></div>
             <a @click="showTransfer(account)" class="transfer-btn">Transfer</a>
@@ -334,6 +412,103 @@ async function submitTransfer() {
     <button class="secondary search-users-btn" @click="openUserSearch">
         Search other users
     </button>
+
+    <section class="transactions-section">
+        <div class="transactions-header">
+            <h2>Transactions</h2>
+            <p>Filter your activity by date, amount, or account.</p>
+        </div>
+
+        <form class="tx-search" @submit.prevent="searchTransactions">
+            <label>
+                Account
+                <input
+                    v-model.trim="txAccount"
+                    type="text"
+                    list="account-options"
+                    placeholder="IBAN or Account Number"
+                />
+            </label>
+            <label>
+                From
+                <input v-model="txDateFrom" type="date" />
+            </label>
+            <label>
+                To
+                <input v-model="txDateTo" type="date" />
+            </label>
+            <label>
+                Amount (€)
+                <div class="amount-filter">
+                    <select v-model="txAmountFilter" aria-label="Amount comparison">
+                        <option value="LessThan">&lt;</option>
+                        <option value="EqualTo">=</option>
+                        <option value="GreaterThan">&gt;</option>
+                    </select>
+                    <input v-model.trim="txAmountEuros" type="number" min="0" step="0.01" />
+                </div>
+            </label>
+            <button type="submit">Search</button>
+            <button type="button" class="secondary" :disabled="!hasTxFilters" @click="resetTransactions">
+                Reset
+            </button>
+        </form>
+
+        <datalist id="account-options">
+            <option
+                v-for="account in ownAccounts"
+                :key="account.accountId"
+                :value="String(account.iban ?? account.accountNumber)"
+            />
+        </datalist>
+
+        <article>
+            <p v-if="txLoading" aria-busy="true">Loading transactions…</p>
+            <p v-else-if="txError" class="error">{{ txError }}</p>
+            <p v-else-if="transactions.length === 0">No transactions found.</p>
+
+            <table v-else>
+                <thead>
+                    <tr>
+                        <th scope="col">From</th>
+                        <th scope="col">To</th>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Initiated by</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="tx in transactions" :key="tx.transactionId">
+                        <td>
+                            {{ tx.from.identifier }}
+                            <small>{{ tx.from.ownerFirstName }} {{ tx.from.ownerLastName }}</small>
+                        </td>
+                        <td>
+                            {{ tx.to.identifier }}
+                            <small>{{ tx.to.ownerFirstName }} {{ tx.to.ownerLastName }}</small>
+                        </td>
+                        <td>{{ formatCents(tx.amountInCents) }}</td>
+                        <td>{{ dateFormat.format(new Date(tx.timestamp)) }}</td>
+                        <td>{{ tx.initiatedBy }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <nav v-if="!txLoading" class="pagination">
+                <button class="secondary" :disabled="txPage === 0" @click="goToTxPage(txPage - 1)">
+                    &lt; Prev
+                </button>
+                <span>Page {{ txPage + 1 }} of {{ txTotalPages }}</span>
+                <button
+                    class="secondary"
+                    :disabled="txPage >= txTotalPages - 1"
+                    @click="goToTxPage(txPage + 1)"
+                >
+                    Next &gt;
+                </button>
+            </nav>
+        </article>
+    </section>
     <dialog :open="transferState !== null">
         <article v-if="transferState">
             <header>
@@ -580,5 +755,86 @@ fieldset {
 
 .search-results {
     margin-top: 0.5rem;
+}
+
+.transactions-section {
+    margin-top: 2rem;
+}
+
+.transactions-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+.transactions-header h2 {
+    margin-bottom: 0;
+}
+
+.transactions-header p {
+    margin: 0;
+    color: var(--pico-muted-color);
+}
+
+.tx-search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 1rem;
+}
+
+.tx-search label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.tx-search input,
+.tx-search select {
+    margin: 0;
+}
+
+.tx-search button {
+    margin: 0;
+    width: auto;
+}
+
+.amount-filter {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.amount-filter select {
+    width: auto;
+    flex: none;
+}
+
+.amount-filter input {
+    min-width: 4rem;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.pagination button {
+    margin: 0;
+    width: auto;
+}
+
+td small {
+    display: block;
+    color: var(--pico-muted-color);
+}
+
+.error {
+    color: var(--pico-del-color);
 }
 </style>

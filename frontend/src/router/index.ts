@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomePage from "@/pages/HomePage.vue";
 import LoginPage from "@/pages/LoginPage.vue";
+import RegisterPage from "@/pages/RegisterPage.vue";
 import NotFoundPage from "@/pages/NotFoundPage.vue";
 import EmployeeDashboard from "@/pages/EmployeeDashboard.vue";
 import AccountsPage from "@/pages/AccountsPage.vue";
@@ -11,6 +12,7 @@ const router = createRouter({
     routes: [
         { path: "/", name: "home", component: HomePage },
         { path: "/login", name: "login", component: LoginPage },
+        { path: "/register", name: "register", component: RegisterPage },
         { path: "/employee", name: "employee", component: EmployeeDashboard, meta: { requiresEmployee: true } },
         { path: "/accounts", name: "accounts", component: AccountsPage },
 
