@@ -10,6 +10,9 @@ public record AccountDetailResponse (
     String iban,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    Long accountNumber,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     String accountType,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
