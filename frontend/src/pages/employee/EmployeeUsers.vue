@@ -17,11 +17,10 @@ async function loadUsers() {
   loading.value = true;
   error.value = "";
   try {
-    const result = await api.users.list({ page: pageIndex.value, size: PAGE_SIZE, isApproved: false });
+    const result = await api.users.list({ page: pageIndex.value, size: PAGE_SIZE, isApproved: true });
     users.value = result.content ?? [];
     totalPages.value = result.page?.totalPages ?? 0;
 
-    // If the last user on a page was just approved, step back to the previous page.
     if (users.value.length === 0 && pageIndex.value > 0) {
       pageIndex.value--;
       await loadUsers();
@@ -40,43 +39,66 @@ function goToPage(index: number) {
 
 onMounted(loadUsers);
 
-// The user whose approval modal is open (null = closed)
+// Edit modal
 const selected = ref<User | null>(null);
 const submitting = ref(false);
 const modalError = ref("");
+const editFirstName = ref("");
+const editLastName = ref("");
+const editEmail = ref("");
+const editClosed = ref(false);
 const successMessage = ref("");
-const dailyLimitEuros = ref(500);
-const absoluteLimitEuros = ref(0);
 
-function openApprove(user: User) {
+function openEdit(user: User) {
   selected.value = user;
-  dailyLimitEuros.value = 500;
-  absoluteLimitEuros.value = 0;
+  editFirstName.value = user.firstName;
+  editLastName.value = user.lastName;
+  editEmail.value = user.email;
+  editClosed.value = user.closed;
   modalError.value = "";
 }
 
-function closeApprove() {
+function closeEdit() {
   selected.value = null;
 }
 
-async function confirmApprove() {
+async function saveEdit() {
   if (!selected.value) return;
-  const user = selected.value;
 
   submitting.value = true;
   modalError.value = "";
   try {
-    const resp = await api.accounts.approve({
-      userId: user.userId,
-      dailyLimitInCents: Math.round(dailyLimitEuros.value * 100),
-      absoluteLimitInCents: Math.round(absoluteLimitEuros.value * 100),
+    await api.users.update(selected.value.userId, {
+      firstName: editFirstName.value,
+      lastName: editLastName.value,
+      email: editEmail.value,
     });
-    // Close the approval modal and show a success message, re-fetch the unapproved users
     selected.value = null;
-    successMessage.value = resp.message;
+    successMessage.value = "User details updated successfully.";
     await loadUsers();
   } catch (e) {
-    modalError.value = e instanceof Error ? e.message : "Failed to approve user. Please try again.";
+    modalError.value = e instanceof Error ? e.message : "Failed to update user. Please try again.";
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function toggleClosed() {
+  if (!selected.value) return;
+
+  const reopen = editClosed.value;
+  const action = reopen ? "reopen" : "close";
+  if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+
+  submitting.value = true;
+  modalError.value = "";
+  try {
+    await api.users.update(selected.value.userId, { closed: !reopen });
+    selected.value = null;
+    successMessage.value = reopen ? "User reopened successfully." : "User closed successfully.";
+    await loadUsers();
+  } catch (e) {
+    modalError.value = e instanceof Error ? e.message : `Failed to ${action} user. Please try again.`;
   } finally {
     submitting.value = false;
   }
@@ -85,35 +107,39 @@ async function confirmApprove() {
 
 <template>
   <hgroup>
-    <h2>Approve Users</h2>
-    <p>Review users requesting approval</p>
+    <h2>View Users</h2>
+    <p>View all users and manage them</p>
   </hgroup>
 
   <article>
     <p v-if="loading" aria-busy="true">Loading users…</p>
     <p v-else-if="error">{{ error }}</p>
-    <p v-else-if="users.length === 0">No users awaiting approval.</p>
+    <p v-else-if="users.length === 0">No users found.</p>
 
     <table v-else>
       <thead>
         <tr>
-          <th scope="col">Name</th>
+          <th scope="col">Name (ID)</th>
           <th scope="col">Email</th>
           <th scope="col">Phone</th>
           <th scope="col">BSN</th>
           <th scope="col">Registration Date</th>
+          <th scope="col">Role</th>
+          <th scope="col">Approved By (ID)</th>
           <th scope="col">Manage</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="user in users" :key="user.userId">
-          <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <td>{{ user.firstName }} {{ user.lastName }} ({{ user.userId }})</td>
           <td>{{ user.email }}</td>
           <td>{{ user.phoneNumber }}</td>
           <td>{{ user.bsn }}</td>
           <td>{{ dateFormat.format(new Date(user.registrationDate)) }}</td>
+          <td>{{ user.role }}</td>
+          <td>{{ user.approvedBy }}</td>
           <td>
-            <button class="approve" @click="openApprove(user)">Approve</button>
+            <button class="secondary" @click="openEdit(user)">Edit</button>
           </td>
         </tr>
       </tbody>
@@ -133,30 +159,39 @@ async function confirmApprove() {
   <dialog :open="selected !== null">
     <article v-if="selected">
       <header>
-        <button aria-label="Close" rel="prev" @click="closeApprove"></button>
+        <button aria-label="Close" rel="prev" @click="closeEdit"></button>
         <p>
-          <strong>Approve {{ selected.firstName }} {{ selected.lastName }}</strong>
+          <strong>Edit {{ selected.firstName }} {{ selected.lastName }}</strong>
         </p>
       </header>
 
-      <form @submit.prevent="confirmApprove">
+      <form @submit.prevent="saveEdit">
+        <p v-if="editClosed" class="error"><strong>This user is closed.</strong> Reopen them to edit their details.</p>
+
         <label>
-          Daily transfer limit (€)
-          <input v-model.number="dailyLimitEuros" type="number" min="0" required />
+          First name
+          <input v-model.trim="editFirstName" type="text" minlength="2" maxlength="50" :disabled="editClosed" required />
         </label>
         <label>
-          Absolute limit (€)
-          <input v-model.number="absoluteLimitEuros" type="number" required />
+          Last name
+          <input v-model.trim="editLastName" type="text" minlength="2" maxlength="50" :disabled="editClosed" required />
+        </label>
+        <label>
+          Email
+          <input v-model.trim="editEmail" type="email" :disabled="editClosed" required />
         </label>
 
         <p v-if="modalError" class="error">{{ modalError }}</p>
 
         <footer>
-          <button type="button" class="secondary" :disabled="submitting" @click="closeApprove">
+          <button type="button" class="secondary" :disabled="submitting" @click="closeEdit">
             Cancel
           </button>
-          <button type="submit" class="approve" :aria-busy="submitting" :disabled="submitting">
-            Approve &amp; create accounts
+          <button type="submit" :aria-busy="submitting" :disabled="submitting || editClosed">
+            Save changes
+          </button>
+          <button type="button" :class="editClosed ? 'reopen' : 'close-user'" :disabled="submitting" @click="toggleClosed">
+            {{ editClosed ? "Reopen user" : "Close user" }}
           </button>
         </footer>
       </form>
@@ -178,12 +213,6 @@ async function confirmApprove() {
 </template>
 
 <style scoped>
-.approve {
-  --pico-background-color: var(--pico-ins-color);
-  --pico-border-color: var(--pico-ins-color);
-  margin: 0;
-}
-
 .error {
   color: var(--pico-del-color);
 }
@@ -198,6 +227,16 @@ dialog footer button {
   width: auto;
   margin: 0;
   white-space: nowrap;
+}
+
+dialog footer .close-user {
+  --pico-background-color: var(--pico-del-color);
+  --pico-border-color: var(--pico-del-color);
+  margin-left: auto;
+}
+
+dialog footer .reopen {
+  margin-left: auto;
 }
 
 .pagination {

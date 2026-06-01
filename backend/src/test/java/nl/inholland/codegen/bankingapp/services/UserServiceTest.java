@@ -31,11 +31,15 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private JwtUtil jwtUtil;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private JwtUtil jwtUtil;
 
-    @InjectMocks private UserService userService;
+    @InjectMocks
+    private UserService userService;
 
     private User customer;
     private User employee;
@@ -74,7 +78,7 @@ class UserServiceTest {
         when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
 
         AuthenticationException ex = assertThrows(AuthenticationException.class,
-                () -> userService.login(new LoginRequest("nonexistent@example.com", "password")));
+            () -> userService.login(new LoginRequest("nonexistent@example.com", "password")));
         assertEquals("Invalid email or password", ex.getMessage());
         verifyNoInteractions(passwordEncoder);
         verifyNoInteractions(jwtUtil);
@@ -86,7 +90,7 @@ class UserServiceTest {
         when(passwordEncoder.matches("wrongpassword", "hashedPassword")).thenReturn(false);
 
         AuthenticationException ex = assertThrows(AuthenticationException.class,
-                () -> userService.login(new LoginRequest("customer@example.com", "wrongpassword")));
+            () -> userService.login(new LoginRequest("customer@example.com", "wrongpassword")));
         assertEquals("Invalid email or password", ex.getMessage());
         verifyNoInteractions(jwtUtil);
     }
@@ -195,19 +199,20 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UserPatchRequest request = new UserPatchRequest("NewFirst", "NewLast", "newemail@example.com");
+        UserPatchRequest request = new UserPatchRequest("NewFirst", "NewLast", "newemail@example.com", true);
         User result = userService.updateUser(1L, request);
 
         assertEquals("NewFirst", result.getFirstName());
         assertEquals("NewLast", result.getLastName());
         assertEquals("newemail@example.com", result.getEmail());
+        assertTrue(result.isClosed());
     }
 
     @Test
     void updateUser_throwsNotFoundException_whenUserNotExists() {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        UserPatchRequest request = new UserPatchRequest("NewFirst", null, null);
+        UserPatchRequest request = new UserPatchRequest("NewFirst", null, null, null);
 
         assertThrows(NotFoundException.class, () -> userService.updateUser(999L, request));
     }
@@ -217,10 +222,10 @@ class UserServiceTest {
         customer.setClosed(true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
 
-        UserPatchRequest request = new UserPatchRequest("NewFirst", null, null);
+        UserPatchRequest request = new UserPatchRequest("NewFirst", null, null, null);
 
         BadRequestException ex = assertThrows(BadRequestException.class,
-                () -> userService.updateUser(1L, request));
+            () -> userService.updateUser(1L, request));
         assertEquals("Cannot update a closed account", ex.getMessage());
     }
 
@@ -229,38 +234,11 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(userRepository.save(any(User.class))).thenThrow(DataIntegrityViolationException.class);
 
-        UserPatchRequest request = new UserPatchRequest(null, null, "existing@example.com");
+        UserPatchRequest request = new UserPatchRequest(null, null, "existing@example.com", null);
 
         BadRequestException ex = assertThrows(BadRequestException.class,
-                () -> userService.updateUser(1L, request));
+            () -> userService.updateUser(1L, request));
         assertEquals("Email is already in use", ex.getMessage());
     }
-
-    @Test
-    void deleteUser_setsClosedToTrue() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        userService.deleteUser(1L);
-
-        assertTrue(customer.isClosed());
-        verify(userRepository).save(customer);
-    }
-
-    @Test
-    void deleteUser_throwsNotFoundException_whenUserNotExists() {
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class, () -> userService.deleteUser(999L));
-    }
-
-    @Test
-    void deleteUser_doesNothing_whenUserAlreadyClosed() {
-        customer.setClosed(true);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
-
-        userService.deleteUser(1L);
-
-        verify(userRepository, never()).save(any());
-    }
 }
+

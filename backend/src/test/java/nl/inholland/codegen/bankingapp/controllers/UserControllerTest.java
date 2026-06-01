@@ -207,28 +207,4 @@ class UserControllerTest {
                 .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isNotFound());
     }
-
-    // --- DELETE /users/{userId} ---
-
-    @Test
-    void deleteUser_returns200_whenEmployeeDeletes() throws Exception {
-        mockMvc.perform(delete("/users/" + customerB.getUserId())
-                .header("Authorization", bearer(tokenEmployee)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("User with the id " + customerB.getUserId() + " has been closed"));
-    }
-
-    @Test
-    void deleteUser_returns401_whenCustomerTries() throws Exception {
-        mockMvc.perform(delete("/users/" + customerB.getUserId())
-                .header("Authorization", bearer(tokenCustomerA)))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void deleteUser_returns404_whenUserNotExists() throws Exception {
-        mockMvc.perform(delete("/users/999")
-                .header("Authorization", bearer(tokenEmployee)))
-            .andExpect(status().isNotFound());
-    }
 }

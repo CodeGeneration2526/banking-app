@@ -43,4 +43,8 @@ function handleLogout() {
     </footer>
 </template>
 
-<style scoped></style>
+<style scoped>
+header, main, footer {
+    padding: 1.5rem 2rem;
+}
+</style>

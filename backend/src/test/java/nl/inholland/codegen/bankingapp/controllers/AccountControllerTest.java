@@ -120,6 +120,16 @@ class AccountControllerTest {
     }
 
     @Test
+    void listAllAccounts_filtersByAccountNumber() throws Exception {
+        mockMvc.perform(get("/accounts")
+                .param("iban", String.valueOf(accAsavings.getAccountNumber()))
+                .header("Authorization", bearer(tokenEmployee)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content.length()").value(1))
+            .andExpect(jsonPath("$.content[0].accountId").value(accAsavings.getAccountId()));
+    }
+
+    @Test
     void listAllAccounts_filtersByFirstName() throws Exception {
         mockMvc.perform(get("/accounts")
                 .param("firstName", "Alice")
@@ -151,28 +161,69 @@ class AccountControllerTest {
             .andExpect(status().isNotFound());
     }
 
-    // --- DELETE /accounts/{accountId} ---
+    // --- PATCH /accounts/{accountId} ---
 
     @Test
-    void closeAccount_returns200_whenEmployeeCloses() throws Exception {
-        mockMvc.perform(delete("/accounts/" + accAchecking2.getAccountId())
-                .header("Authorization", bearer(tokenEmployee)))
+    void updateAccount_returns200AndUpdatesLimits_whenEmployee() throws Exception {
+        Map<String, Object> body = Map.of(
+            "absoluteLimitInCents", -5_000,
+            "dailyLimitInCents", 250_000
+        );
+
+        mockMvc.perform(patch("/accounts/" + accAchecking1.getAccountId())
+                .header("Authorization", bearer(tokenEmployee))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("Account with the id " + accAchecking2.getAccountId() + " has been closed"));
+            .andExpect(jsonPath("$.accountId").value(accAchecking1.getAccountId()))
+            .andExpect(jsonPath("$.absoluteLimitInCents").value(-5_000))
+            .andExpect(jsonPath("$.dailyLimitInCents").value(250_000))
+            .andExpect(jsonPath("$.closed").value(false));
     }
 
     @Test
-    void closeAccount_returns403_whenOwnerClosesOwnAccount() throws Exception {
-        mockMvc.perform(delete("/accounts/" + accAchecking1.getAccountId())
-                .header("Authorization", bearer(tokenA)))
-            .andExpect(status().isUnauthorized());
+    void updateAccount_closesAccount_whenClosedTrue() throws Exception {
+        Map<String, Object> body = Map.of("closed", true);
+
+        mockMvc.perform(patch("/accounts/" + accAchecking1.getAccountId())
+                .header("Authorization", bearer(tokenEmployee))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.closed").value(true));
     }
 
     @Test
-    void closeAccount_returns404_whenAccountNotExists() throws Exception {
-        mockMvc.perform(delete("/accounts/999")
-                .header("Authorization", bearer(tokenEmployee)))
+    void updateAccount_returns400_whenDailyLimitNegative() throws Exception {
+        Map<String, Object> body = Map.of("dailyLimitInCents", -1);
+
+        mockMvc.perform(patch("/accounts/" + accAchecking1.getAccountId())
+                .header("Authorization", bearer(tokenEmployee))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateAccount_returns404_whenAccountNotExists() throws Exception {
+        Map<String, Object> body = Map.of("dailyLimitInCents", 100_000);
+
+        mockMvc.perform(patch("/accounts/999")
+                .header("Authorization", bearer(tokenEmployee))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateAccount_returns403_whenCustomerTries() throws Exception {
+        Map<String, Object> body = Map.of("dailyLimitInCents", 100_000);
+
+        mockMvc.perform(patch("/accounts/" + accAchecking1.getAccountId())
+                .header("Authorization", bearer(tokenA))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+            .andExpect(status().isUnauthorized());
     }
 
     // --- POST /accounts ---

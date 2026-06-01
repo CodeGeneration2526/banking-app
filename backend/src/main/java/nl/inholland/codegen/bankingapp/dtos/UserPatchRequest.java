@@ -12,5 +12,7 @@ public record UserPatchRequest (
     String lastName,
 
     @Email(message = "Email must be a valid email address")
-    String email
+    String email,
+
+    Boolean closed
 ) {}
