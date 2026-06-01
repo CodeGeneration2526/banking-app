@@ -67,15 +67,17 @@ class AccountServiceTest {
     }
 
     @Test
-    void searchCheckingAccounts_returnsPagedResults() {
+    void getAllAccounts_returnsPagedResults() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Account> page = new PageImpl<>(java.util.List.of(checkingAccount));
-        when(accountRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+        Specification<Account> spec = (root, query, criteriaBuilder) -> null;
 
-        Page<Account> result = accountService.searchCheckingAccounts("John", "Doe", "NL00INHO0000000001", pageable);
+        when(accountRepository.findAll(eq(spec), eq(pageable))).thenReturn(page);
+
+        Page<Account> result = accountService.getAllAccounts(spec, pageable);
 
         assertSame(page, result);
-        verify(accountRepository).findAll(any(Specification.class), eq(pageable));
+        verify(accountRepository).findAll(eq(spec), eq(pageable));
     }
 
     @Test
