@@ -4,7 +4,6 @@ import LoginPage from "@/pages/LoginPage.vue";
 import NotFoundPage from "@/pages/NotFoundPage.vue";
 import EmployeeDashboard from "@/pages/EmployeeDashboard.vue";
 import AccountsPage from "@/pages/AccountsPage.vue";
-import TransactionsPage from "@/pages/TransactionsPage.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const router = createRouter({
@@ -14,7 +13,6 @@ const router = createRouter({
         { path: "/login", name: "login", component: LoginPage },
         { path: "/employee", name: "employee", component: EmployeeDashboard, meta: { requiresEmployee: true } },
         { path: "/accounts", name: "accounts", component: AccountsPage },
-        { path: "/transactions", name: "transactions", component: TransactionsPage },
 
         // 404 catch all route
         { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundPage },

@@ -66,14 +66,26 @@ function showTransfer(account: AccountDetail) {
     </div>
     <div v-if="transferState">
         <h2>Transfers</h2>
-        <label>
-            Sender
-            <input disabled="true" :value="transferState.iban ?? transferState.accountId">
-        </label>
+        <fieldset>
+            <label>
+                Sender
+                <input disabled="true" name="sender" :value="transferState.iban ?? transferState.accountNumber">
+            </label>
+            <label>
+                Receiver
+                <input name="receiver" placeholder="Search for the Receiver">
+            </label>
+        </fieldset>
     </div>
 </template>
 
 <style scoped>
+fieldset {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
+
 .spacer {
     height: 0.5rem;
 }
