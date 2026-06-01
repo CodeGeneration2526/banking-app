@@ -2,14 +2,10 @@ package nl.inholland.codegen.bankingapp.dtos;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record AccountSummaryResponse(
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    long accountId,
+public record TransactionParty(
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    long accountNumber,
-
-    String iban,
+    String identifier,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     String ownerFirstName,
@@ -18,5 +14,5 @@ public record AccountSummaryResponse(
     String ownerLastName,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    String accountType
+    long ownerId
 ) {}

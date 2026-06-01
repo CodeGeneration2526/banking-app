@@ -7,7 +7,7 @@ const users = ref<User[]>([]);
 const loading = ref(true);
 const error = ref("");
 
-const dateFormat = new Intl.DateTimeFormat("en-nl", { dateStyle: "medium", timeStyle: "long" });
+const dateFormat = new Intl.DateTimeFormat("en-NL", { dateStyle: "medium", timeStyle: "long" });
 
 const PAGE_SIZE = 10;
 const pageIndex = ref(0);
@@ -179,8 +179,8 @@ async function confirmApprove() {
 
 <style scoped>
 .approve {
-  --pico-background-color: #2e7d32;
-  --pico-border-color: #2e7d32;
+  --pico-background-color: var(--pico-ins-color);
+  --pico-border-color: var(--pico-ins-color);
   margin: 0;
 }
 

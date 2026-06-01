@@ -59,6 +59,8 @@ function resetFilters() {
   search();
 }
 
+const hasFilters = () => !!(firstName.value || lastName.value || iban.value);
+
 onMounted(loadAccounts);
 
 const selected = ref<AccountSummary | null>(null);
@@ -68,7 +70,7 @@ const submitting = ref(false);
 const modalError = ref("");
 const dailyLimitEuros = ref(0);
 const absoluteLimitEuros = ref(0);
-const closed = ref(false);
+const editClosed = ref(false);
 const successMessage = ref("");
 
 async function openEdit(account: AccountSummary) {
@@ -81,7 +83,7 @@ async function openEdit(account: AccountSummary) {
     detail.value = result;
     dailyLimitEuros.value = result.dailyLimitInCents / 100;
     absoluteLimitEuros.value = result.absoluteLimitInCents / 100;
-    closed.value = result.closed;
+    editClosed.value = result.closed;
   } catch (e) {
     modalError.value = e instanceof Error ? e.message : "Failed to load account details.";
   } finally {
@@ -116,7 +118,7 @@ async function saveEdit() {
 async function toggleClosed() {
   if (!selected.value) return;
 
-  const reopen = closed.value;
+  const reopen = editClosed.value;
   const action = reopen ? "reopen" : "close";
   if (!window.confirm(`Are you sure you want to ${action} this account?`)) return;
 
@@ -144,9 +146,9 @@ async function toggleClosed() {
   <form class="search" @submit.prevent="search">
     <input v-model.trim="firstName" type="text" placeholder="First name" />
     <input v-model.trim="lastName" type="text" placeholder="Last name" />
-    <input v-model.trim="iban" type="text" placeholder="IBAN" />
+    <input v-model.trim="iban" type="text" placeholder="IBAN or account number" />
     <button type="submit">Search</button>
-    <button type="button" class="secondary" :disabled="!firstName && !lastName && !iban" @click="resetFilters">
+    <button type="button" class="secondary" :disabled="!hasFilters()" @click="resetFilters">
       Reset
     </button>
   </form>
@@ -160,7 +162,7 @@ async function toggleClosed() {
       <thead>
         <tr>
           <th scope="col">Owner</th>
-          <th scope="col">IBAN</th>
+          <th scope="col">IBAN / Account Number</th>
           <th scope="col">Type</th>
           <th scope="col">Manage</th>
         </tr>
@@ -168,7 +170,7 @@ async function toggleClosed() {
       <tbody>
         <tr v-for="account in accounts" :key="account.accountId">
           <td>{{ account.ownerFirstName }} {{ account.ownerLastName }}</td>
-          <td>{{ account.iban ?? "-" }}</td>
+          <td>{{ account.iban ?? account.accountNumber }}</td>
           <td>{{ account.accountType }}</td>
           <td>
             <button class="secondary" @click="openEdit(account)">Edit</button>
@@ -201,15 +203,15 @@ async function toggleClosed() {
 
       <form v-else-if="detail" @submit.prevent="saveEdit">
         <p>Current balance: <strong>{{ formatCents(detail.storedAmountInCents) }}</strong></p>
-        <p v-if="closed" class="error"><strong>This account is closed.</strong> Reopen it to edit its limits.</p>
+        <p v-if="editClosed" class="error"><strong>This account is closed.</strong> Reopen it to edit its limits.</p>
 
         <label>
           Daily transfer limit (€)
-          <input v-model.number="dailyLimitEuros" type="number" min="0" :disabled="closed" required />
+          <input v-model.number="dailyLimitEuros" type="number" min="0" :disabled="editClosed" required />
         </label>
         <label>
           Absolute limit (€)
-          <input v-model.number="absoluteLimitEuros" type="number" :disabled="closed" required />
+          <input v-model.number="absoluteLimitEuros" type="number" :disabled="editClosed" required />
         </label>
 
         <p v-if="modalError" class="error">{{ modalError }}</p>
@@ -218,11 +220,11 @@ async function toggleClosed() {
           <button type="button" class="secondary" :disabled="submitting" @click="closeEdit">
             Cancel
           </button>
-          <button type="submit" :aria-busy="submitting" :disabled="submitting || closed">
+          <button type="submit" :aria-busy="submitting" :disabled="submitting || editClosed">
             Save changes
           </button>
-          <button type="button" :class="closed ? 'reopen' : 'close-account'" :disabled="submitting" @click="toggleClosed">
-            {{ closed ? "Reopen account" : "Close account" }}
+          <button type="button" :class="editClosed ? 'reopen' : 'close-account'" :disabled="submitting" @click="toggleClosed">
+            {{ editClosed ? "Reopen account" : "Close account" }}
           </button>
         </footer>
       </form>

@@ -190,11 +190,18 @@ export interface components {
             /** Format: int64 */
             amountInCents: number;
         };
+        TransactionParty: {
+            identifier: string;
+            ownerFirstName: string;
+            ownerLastName: string;
+            /** Format: int64 */
+            ownerId: number;
+        };
         TransactionResponse: {
             /** Format: int64 */
             transactionId: number;
-            from: string;
-            to: string;
+            from: components["schemas"]["TransactionParty"];
+            to: components["schemas"]["TransactionParty"];
             /** Format: int64 */
             amountInCents: number;
             /** Format: date-time */
@@ -222,8 +229,7 @@ export interface components {
             role: "Customer" | "Employee";
             /** Format: date-time */
             registrationDate: string;
-            /** Format: int64 */
-            approvedBy?: number;
+            approvedBy?: string;
             closed: boolean;
         };
         LoginRequest: {
@@ -298,6 +304,8 @@ export interface components {
         AccountSummaryResponse: {
             /** Format: int64 */
             accountId: number;
+            /** Format: int64 */
+            accountNumber: number;
             iban?: string;
             ownerFirstName: string;
             ownerLastName: string;

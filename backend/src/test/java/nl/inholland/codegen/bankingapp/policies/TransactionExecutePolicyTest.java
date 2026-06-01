@@ -129,6 +129,28 @@ class TransactionExecutePolicyTest {
     }
 
     @Test
+    void enforceEmployeeCheckingOnly_throwsWhenSenderIsSavings() {
+        assertThrows(BadRequestException.class,
+                () -> policy.enforceEmployeeCheckingOnly(employee, savings, receiver));
+    }
+
+    @Test
+    void enforceEmployeeCheckingOnly_throwsWhenReceiverIsSavings() {
+        assertThrows(BadRequestException.class,
+                () -> policy.enforceEmployeeCheckingOnly(employee, sender, savings));
+    }
+
+    @Test
+    void enforceEmployeeCheckingOnly_successWhenBothChecking() {
+        assertDoesNotThrow(() -> policy.enforceEmployeeCheckingOnly(employee, sender, receiver));
+    }
+
+    @Test
+    void enforceEmployeeCheckingOnly_customerNotRestricted() {
+        assertDoesNotThrow(() -> policy.enforceEmployeeCheckingOnly(customer, savings, receiver));
+    }
+
+    @Test
     void enforceAbsoluteLimit_throwsWhenAmountWouldBreachLimit() {
         sender.setStoredAmountInCents(100L);
         sender.setAbsoluteLimitInCents(0L);
@@ -196,5 +218,23 @@ class TransactionExecutePolicyTest {
         receiver.setOwner(otherCustomer);
 
         assertDoesNotThrow(() -> policy.enforceTransactionExecutePolicy(sender, receiver, 100L, employee));
+    }
+
+    @Test
+    void enforceTransactionExecutePolicy_throwsWhenEmployeeTransfersToSavings() {
+        savings.setOwner(otherCustomer);
+
+        assertThrows(BadRequestException.class,
+                () -> policy.enforceTransactionExecutePolicy(sender, savings, 100L, employee));
+    }
+
+    @Test
+    void enforceTransactionExecutePolicy_throwsWhenEmployeeTransfersFromSavings() {
+        savings.setOwner(otherCustomer);
+        savings.setStoredAmountInCents(100_000L);
+        savings.setAbsoluteLimitInCents(0L);
+
+        assertThrows(BadRequestException.class,
+                () -> policy.enforceTransactionExecutePolicy(savings, receiver, 100L, employee));
     }
 }

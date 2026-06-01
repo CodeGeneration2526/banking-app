@@ -1,7 +1,7 @@
 // Ergonomic aliases over the generated OpenAPI types.
 // Only alias DTOs that are used often or whose generated names are long;
 // reach into `components["schemas"][...]` directly for one-off types.
-import type { components } from "./schema";
+import type { components, operations } from "./schema";
 
 type Schemas = components["schemas"];
 
@@ -21,6 +21,8 @@ export type AccountsPage = Schemas["PagedModelAccountSummaryResponse"];
 export type TransactionRequest = Schemas["TransactionRequest"];
 export type Transaction = Schemas["TransactionResponse"];
 export type TransactionsPage = Schemas["PagedModelTransactionResponse"];
+export type AmountFilter =
+    NonNullable<NonNullable<operations["getTransactions"]["parameters"]["query"]>["amountFilter"]>;
 
 // --- Customers / users ---
 export type User = Schemas["UserResponse"];

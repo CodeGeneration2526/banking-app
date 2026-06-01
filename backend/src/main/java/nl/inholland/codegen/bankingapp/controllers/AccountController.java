@@ -64,7 +64,7 @@ public class AccountController {
             .where(AccountSpecifications.visibleTo(user))
             .and(AccountSpecifications.firstNameContains(firstName))
             .and(AccountSpecifications.lastNameContains(lastName))
-            .and(AccountSpecifications.ibanEquals(iban))
+            .and(AccountSpecifications.ibanOrAccountNumberEquals(iban))
             .and(AccountSpecifications.accountTypeEquals(accountType))
             .and(AccountSpecifications.ownerUserId(ownerUserId));
 

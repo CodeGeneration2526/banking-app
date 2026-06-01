@@ -7,7 +7,7 @@ const users = ref<User[]>([]);
 const loading = ref(true);
 const error = ref("");
 
-const dateFormat = new Intl.DateTimeFormat("en-nl", { dateStyle: "medium", timeStyle: "long" });
+const dateFormat = new Intl.DateTimeFormat("en-NL", { dateStyle: "medium", timeStyle: "long" });
 
 const PAGE_SIZE = 10;
 const pageIndex = ref(0);
@@ -107,7 +107,7 @@ async function toggleClosed() {
 
 <template>
   <hgroup>
-    <h2>View all Users</h2>
+    <h2>View Users</h2>
     <p>View all users and manage them</p>
   </hgroup>
 
@@ -118,40 +118,40 @@ async function toggleClosed() {
 
     <table v-else>
       <thead>
-      <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Email</th>
-        <th scope="col">Phone</th>
-        <th scope="col">BSN</th>
-        <th scope="col">Registration Date</th>
-        <th scope="col">Role</th>
-        <th scope="col">Approved By (ID)</th>
-        <th scope="col">Manage</th>
-      </tr>
+        <tr>
+          <th scope="col">Name (ID)</th>
+          <th scope="col">Email</th>
+          <th scope="col">Phone</th>
+          <th scope="col">BSN</th>
+          <th scope="col">Registration Date</th>
+          <th scope="col">Role</th>
+          <th scope="col">Approved By (ID)</th>
+          <th scope="col">Manage</th>
+        </tr>
       </thead>
       <tbody>
-      <tr v-for="user in users" :key="user.userId">
-        <td>{{ user.firstName }} {{ user.lastName }}</td>
-        <td>{{ user.email }}</td>
-        <td>{{ user.phoneNumber }}</td>
-        <td>{{ user.bsn }}</td>
-        <td>{{ dateFormat.format(new Date(user.registrationDate)) }}</td>
-        <td>{{ user.role }}</td>
-        <td>{{ user.approvedBy }}</td>
-        <td>
-          <button class="secondary" @click="openEdit(user)">Edit</button>
-        </td>
-      </tr>
+        <tr v-for="user in users" :key="user.userId">
+          <td>{{ user.firstName }} {{ user.lastName }} ({{ user.userId }})</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.phoneNumber }}</td>
+          <td>{{ user.bsn }}</td>
+          <td>{{ dateFormat.format(new Date(user.registrationDate)) }}</td>
+          <td>{{ user.role }}</td>
+          <td>{{ user.approvedBy }}</td>
+          <td>
+            <button class="secondary" @click="openEdit(user)">Edit</button>
+          </td>
+        </tr>
       </tbody>
     </table>
 
     <nav v-if="!loading && totalPages > 1" class="pagination">
       <button class="secondary" :disabled="pageIndex === 0" @click="goToPage(pageIndex - 1)">
-        < Prev
+        &lt; Prev
       </button>
       <span>Page {{ pageIndex + 1 }} of {{ totalPages }}</span>
       <button class="secondary" :disabled="pageIndex >= totalPages - 1" @click="goToPage(pageIndex + 1)">
-        Next >
+        Next &gt;
       </button>
     </nav>
   </article>
@@ -215,11 +215,6 @@ async function toggleClosed() {
 <style scoped>
 .error {
   color: var(--pico-del-color);
-}
-
-.closed-badge {
-  color: var(--pico-del-color);
-  font-weight: bold;
 }
 
 dialog footer {

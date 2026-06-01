@@ -1,6 +1,6 @@
 @use "@picocss/pico/scss/pico" with (
   $semantic-root-element: "#app",
-  $enable-semantic-container: true,
+  $enable-semantic-container: false,
 );
 
 // Remove underline on hover, if we want this can remove and I'll move it to scoped

@@ -32,7 +32,7 @@ public record UserResponse (
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     Date registrationDate,
 
-    Long approvedBy,
+    String approvedBy,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     boolean closed

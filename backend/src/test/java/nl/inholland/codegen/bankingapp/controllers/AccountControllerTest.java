@@ -120,6 +120,16 @@ class AccountControllerTest {
     }
 
     @Test
+    void listAllAccounts_filtersByAccountNumber() throws Exception {
+        mockMvc.perform(get("/accounts")
+                .param("iban", String.valueOf(accAsavings.getAccountNumber()))
+                .header("Authorization", bearer(tokenEmployee)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content.length()").value(1))
+            .andExpect(jsonPath("$.content[0].accountId").value(accAsavings.getAccountId()));
+    }
+
+    @Test
     void listAllAccounts_filtersByFirstName() throws Exception {
         mockMvc.perform(get("/accounts")
                 .param("firstName", "Alice")

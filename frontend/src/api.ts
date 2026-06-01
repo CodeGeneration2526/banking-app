@@ -10,6 +10,10 @@ import type {
     AccountDetail,
     UpdateAccountRequest,
     UserPatchRequest,
+    TransactionsPage,
+    TransactionRequest,
+    Transaction,
+    AmountFilter,
 } from "@/types/api";
 import { useAuthStore } from "@/stores/auth";
 import router from "@/router";
@@ -96,6 +100,40 @@ export const api = {
         // Approve a pending customer and create their checking + savings accounts
         approve: (body: NewAccountRequest) =>
             request<ApiMessage>("/accounts", {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
+    },
+    transactions: {
+        list: (
+            params: {
+                page?: number;
+                size?: number;
+                userId?: number;
+                account?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                amountInCents?: number;
+                amountFilter?: AmountFilter;
+            } = {},
+        ) => {
+            const query = new URLSearchParams();
+            if (params.page !== undefined) query.set("page", String(params.page));
+            if (params.size !== undefined) query.set("size", String(params.size));
+            if (params.userId !== undefined) query.set("userId", String(params.userId));
+            if (params.account) query.set("account", params.account);
+            if (params.dateFrom) query.set("dateFrom", params.dateFrom);
+            if (params.dateTo) query.set("dateTo", params.dateTo);
+            if (params.amountInCents !== undefined) {
+                query.set("amountInCents", String(params.amountInCents));
+                if (params.amountFilter) query.set("amountFilter", params.amountFilter);
+            }
+            const qs = query.toString();
+            return request<TransactionsPage>(`/transactions${qs ? `?${qs}` : ""}`, { method: "GET" });
+        },
+        // Execute an employee-initiated transfer between two accounts (IBAN or account number)
+        create: (body: TransactionRequest) =>
+            request<Transaction>("/transactions", {
                 method: "POST",
                 body: JSON.stringify(body),
             }),
