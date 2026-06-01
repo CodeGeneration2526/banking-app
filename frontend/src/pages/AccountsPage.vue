@@ -1,26 +1,23 @@
 <script setup lang="ts">
 import { api } from '@/api';
 import { useAuthStore } from '@/stores/auth';
+import type { AccountDetail } from '@/types/api';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const auth = useAuthStore();
 
-if (!auth.currentUser) router.push({ name: "login" });
-const currentUser = auth.currentUser!;
+const transferState = ref<AccountDetail|null>(null);
 
-const accounts = ref<{
-    accountId: number;
-    iban?: string | undefined;
-    accountType: string;
-    storedAmountInCents: number;
-    userId: number;
-    absoluteLimitInCents: number;
-    dailyLimitInCents: number;
-}[]>([]);
+const accounts = ref<AccountDetail[]>([]);
 
 onMounted(async () => {
+    if (!auth.currentUser) {
+        router.push({ name: "login" });
+        return;
+    };
+
     let page = 0;
     let totalPages = 1;
 
@@ -28,7 +25,7 @@ onMounted(async () => {
 
     while (page < totalPages) {
         const res = await api.accounts.list({
-            ownerUserId: currentUser.userId,
+            ownerUserId: auth.currentUser.userId,
             sort: "accountType,ASC",
             page,
         });
@@ -49,19 +46,30 @@ onMounted(async () => {
     }
 });
 
+function showTransfer(account: AccountDetail) {
+    transferState.value = account;
+}
+
 </script>
 
 <template>
-    <h1>Welcome back, {{ currentUser.firstName }}!</h1>
+    <h1>Welcome back, {{ auth.currentUser?.firstName }}!</h1>
     <div v-if="!accounts.length">No Accounts</div>
     <div v-if="accounts.length" class="accounts-grid">
         <article v-for="account in accounts" :key="account.accountId" class="account-card">
             <span class="account-type">{{ account.accountType }}</span>
             <span class="account-balance">&euro;{{ (account.storedAmountInCents / 100).toFixed(2) }}</span>
-            <span class="account-iban">{{ account.iban ?? "NO IBAN" }}</span>
+            <span class="account-iban">{{ account.iban ?? account.accountId }}</span>
             <div class="spacer"></div>
-            <a class="transfer-btn">Transfer</a>
+            <a @click="showTransfer(account)" class="transfer-btn">Transfer</a>
         </article>
+    </div>
+    <div v-if="transferState">
+        <h2>Transfers</h2>
+        <label>
+            Sender
+            <input disabled="true" :value="transferState.iban ?? transferState.accountId">
+        </label>
     </div>
 </template>
 
