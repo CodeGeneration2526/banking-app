@@ -99,6 +99,7 @@ public class AccountController {
 
     @DeleteMapping("{accountId}")
     @Operation(summary = "Close an account", description = "Employee can close a specific account from an user.")
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<ApiResponse> closeAccount(@PathVariable long accountId) {
         User user = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
 

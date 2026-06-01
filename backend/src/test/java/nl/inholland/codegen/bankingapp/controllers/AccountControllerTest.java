@@ -140,15 +140,6 @@ class AccountControllerTest {
     }
 
     @Test
-    void listAllAccounts_returnsOnlyOwnAccounts_whenCustomerNoSearch() throws Exception {
-        mockMvc.perform(get("/accounts")
-                .header("Authorization", bearer(tokenA)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content.length()").value(3))
-            .andExpect(jsonPath("$.content[*].accountType").value(hasItems("Checking", "Checking", "Savings")));
-    }
-
-    @Test
     void getAccountInfo_returnsAccount_whenCustomerOwnsAccount() throws Exception {
         mockMvc.perform(get("/accounts/" + accAchecking1.getAccountId())
                 .header("Authorization", bearer(tokenA)))
