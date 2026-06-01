@@ -152,7 +152,7 @@ async function loadUserSearchResults() {
             iban: searchIban.value.trim() || undefined,
         });
         const content = result.content ?? [];
-        const filtered = content.filter(account => account.userId !== currentUserId.value);
+        const filtered = content.filter(account => account.ownerUserId !== currentUserId.value);
         searchResults.value = filtered;
         searchTotalPages.value = result.page?.totalPages ?? 0;
 

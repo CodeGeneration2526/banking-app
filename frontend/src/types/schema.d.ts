@@ -311,6 +311,8 @@ export interface components {
             iban?: string;
             ownerFirstName: string;
             ownerLastName: string;
+            /** Format: int64 */
+            ownerUserId: number;
             accountType: string;
         };
         PagedModelAccountSummaryResponse: {
