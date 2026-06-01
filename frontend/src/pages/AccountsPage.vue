@@ -40,6 +40,10 @@ const ownAccounts = computed(() =>
     accounts.value.filter(account => account.userId === currentUserId.value),
 );
 
+const ownCheckingAccounts = computed(() =>
+    ownAccounts.value.filter(account => account.accountType === "Checking"),
+);
+
 const ownAccountIdentifiers = computed(() =>
     new Set(ownAccounts.value.map(account => String(account.iban ?? account.accountNumber))),
 );
@@ -152,6 +156,19 @@ function openUserSearch() {
     }
 }
 
+function startTransferToAccount(account: AccountSummary) {
+    const sender = ownCheckingAccounts.value[0];
+    if (!sender) {
+        searchError.value = "You need a checking account to send money.";
+        return;
+    }
+
+    showTransfer(sender);
+    transferMode.value = "other";
+    transferReceiver.value = String(account.iban ?? account.accountNumber ?? "");
+    showUserSearch.value = false;
+}
+
 function closeUserSearch() {
     showUserSearch.value = false;
 }
@@ -161,21 +178,11 @@ function submitUserSearch() {
     loadUserSearchResults();
 }
 
-function resetUserSearch() {
-    searchFirstName.value = "";
-    searchLastName.value = "";
-    searchIban.value = "";
-    submitUserSearch();
-}
-
 function goToSearchPage(index: number) {
     searchPage.value = index;
     loadUserSearchResults();
 }
 
-const hasSearchFilters = computed(() =>
-    Boolean(searchFirstName.value || searchLastName.value || searchIban.value),
-);
 
 onMounted(loadAccounts);
 
@@ -223,7 +230,11 @@ watch(transferMode, mode => {
     }
 
     if (mode === "other") {
-        transferReceiver.value = "";
+        const current = transferReceiver.value.trim();
+        if (!current) return;
+        if (ownAccountIdentifiers.value.has(current)) {
+            transferReceiver.value = "";
+        }
     }
 });
 
@@ -310,9 +321,6 @@ async function submitTransfer() {
 
 <template>
     <h1>Welcome back, {{ auth.currentUser?.firstName }}!</h1>
-    <button class="secondary search-users-btn" @click="openUserSearch">
-        Search other users
-    </button>
     <div v-if="!accounts.length">No Accounts</div>
     <div v-if="accounts.length" class="accounts-grid">
         <article v-for="account in accounts" :key="account.accountId" class="account-card">
@@ -323,6 +331,9 @@ async function submitTransfer() {
             <a @click="showTransfer(account)" class="transfer-btn">Transfer</a>
         </article>
     </div>
+    <button class="secondary search-users-btn" @click="openUserSearch">
+        Search other users
+    </button>
     <dialog :open="transferState !== null">
         <article v-if="transferState">
             <header>
@@ -418,23 +429,22 @@ async function submitTransfer() {
             </header>
 
             <form class="search-users" @submit.prevent="submitUserSearch">
-                <label>
-                    First name
-                    <input v-model.trim="searchFirstName" type="text" placeholder="First name" />
-                </label>
-                <label>
-                    Last name
-                    <input v-model.trim="searchLastName" type="text" placeholder="Last name" />
-                </label>
+                <div class="name-row">
+                    <label>
+                        First name
+                        <input v-model.trim="searchFirstName" type="text" placeholder="First name" />
+                    </label>
+                    <label>
+                        Last name
+                        <input v-model.trim="searchLastName" type="text" placeholder="Last name" />
+                    </label>
+                </div>
                 <label>
                     IBAN
                     <input v-model.trim="searchIban" type="text" placeholder="IBAN" />
                 </label>
                 <div class="search-actions">
                     <button type="submit" :aria-busy="searchLoading">Search</button>
-                    <button type="button" class="secondary" :disabled="!hasSearchFilters" @click="resetUserSearch">
-                        Reset
-                    </button>
                 </div>
             </form>
 
@@ -447,14 +457,18 @@ async function submitTransfer() {
                     <tr>
                         <th scope="col">Owner</th>
                         <th scope="col">IBAN</th>
-                        <th scope="col">Account Type</th>
+                        <th scope="col">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="account in searchResults" :key="account.accountId">
                         <td>{{ account.ownerFirstName }} {{ account.ownerLastName }}</td>
                         <td>{{ account.iban ?? account.accountNumber }}</td>
-                        <td>{{ account.accountType }}</td>
+                        <td>
+                            <a @click="startTransferToAccount(account)" class="send-money-btn">
+                                Send money
+                            </a>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -479,7 +493,7 @@ async function submitTransfer() {
         </article>
     </dialog>
 
-    <dialog :open="successMessage !== ''">
+    <dialog :open="successMessage !== ''" class="chonky">
         <article>
             <header>
                 <button aria-label="Close" rel="prev" @click="successMessage = ''"></button>
@@ -506,7 +520,8 @@ fieldset {
     height: 0.5rem;
 }
 
-.transfer-btn {
+.transfer-btn,
+.send-money-btn {
     cursor: pointer;
 }
 
@@ -549,6 +564,12 @@ fieldset {
     display: grid;
     gap: 0.75rem;
     margin-bottom: 1rem;
+}
+
+.name-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
 }
 
 .search-actions {
