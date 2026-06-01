@@ -59,7 +59,7 @@ function showTransfer(account: AccountDetail) {
         <article v-for="account in accounts" :key="account.accountId" class="account-card">
             <span class="account-type">{{ account.accountType }}</span>
             <span class="account-balance">&euro;{{ (account.storedAmountInCents / 100).toFixed(2) }}</span>
-            <span class="account-iban">{{ account.iban ?? account.accountId }}</span>
+            <span class="account-iban">{{ account.iban ?? account.accountNumber }}</span>
             <div class="spacer"></div>
             <a @click="showTransfer(account)" class="transfer-btn">Transfer</a>
         </article>
