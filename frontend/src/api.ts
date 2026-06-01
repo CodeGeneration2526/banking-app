@@ -9,6 +9,7 @@ import type {
     AccountsPage,
     AccountDetail,
     UpdateAccountRequest,
+    Transaction,
 } from "@/types/api";
 import { useAuthStore } from "@/stores/auth";
 import router from "@/router";
@@ -112,4 +113,9 @@ export const api = {
                 body: JSON.stringify(body),
             }),
     },
+    transactions: {
+        list: (params: {} & Pagable = {}) => {
+            request<Transaction[]>(`/transactions${1}`, { method: "GET" });
+        },
+    }
 };
