@@ -1,6 +1,7 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
@@ -49,6 +50,7 @@ public class AccountController {
         summary = "List customer savings and checking accounts",
         description = "Returns all accounts for the authenticated user, or can be used to search for other users. Employees can view all accounts.")
     public ResponseEntity<PagedModel<AccountSummaryResponse>> listAllAccounts(
+            @RequestParam(required = false) @DefaultValue("false") Boolean search,
             @RequestParam(required = false) String iban,
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,

@@ -302,6 +302,8 @@ export interface components {
             /** Format: int64 */
             accountId: number;
             iban?: string;
+            ownerFirstName: string;
+            ownerLastName: string;
             accountType: string;
         };
         PagedModelAccountSummaryResponse: {
@@ -617,6 +619,8 @@ export interface operations {
     getAllUsers: {
         parameters: {
             query?: {
+                isApproved?: boolean;
+                role?: "Customer" | "Employee";
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
