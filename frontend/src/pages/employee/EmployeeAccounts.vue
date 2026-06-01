@@ -68,6 +68,7 @@ const submitting = ref(false);
 const modalError = ref("");
 const dailyLimitEuros = ref(0);
 const absoluteLimitEuros = ref(0);
+const closed = ref(false);
 
 async function openEdit(account: AccountSummary) {
     selected.value = account;
@@ -79,6 +80,7 @@ async function openEdit(account: AccountSummary) {
         detail.value = result;
         dailyLimitEuros.value = result.dailyLimitInCents / 100;
         absoluteLimitEuros.value = result.absoluteLimitInCents / 100;
+        closed.value = result.closed;
     } catch (e) {
         modalError.value = e instanceof Error ? e.message : "Failed to load account details.";
     } finally {
@@ -108,6 +110,26 @@ async function saveEdit() {
         submitting.value = false;
     }
 }
+
+async function toggleClosed() {
+    if (!selected.value) return;
+
+    const reopen = closed.value;
+    const action = reopen ? "reopen" : "close";
+    if (!window.confirm(`Are you sure you want to ${action} this account?`)) return;
+
+    submitting.value = true;
+    modalError.value = "";
+    try {
+        await api.accounts.update(selected.value.accountId, { closed: !reopen });
+        selected.value = null;
+        await loadAccounts();
+    } catch (e) {
+        modalError.value = e instanceof Error ? e.message : `Failed to ${action} account. Please try again.`;
+    } finally {
+        submitting.value = false;
+    }
+}
 </script>
 
 <template>
@@ -121,7 +143,9 @@ async function saveEdit() {
         <input v-model.trim="lastName" type="text" placeholder="Last name" />
         <input v-model.trim="iban" type="text" placeholder="IBAN" />
         <button type="submit">Search</button>
-        <button type="button" class="secondary" :disabled="!firstName && !lastName && !iban" @click="resetFilters"> Reset </button>
+        <button type="button" class="secondary" :disabled="!firstName && !lastName && !iban" @click="resetFilters">
+          Reset
+        </button>
     </form>
 
     <article>
@@ -152,11 +176,11 @@ async function saveEdit() {
 
         <nav v-if="!loading && totalPages > 1" class="pagination">
             <button class="secondary" :disabled="pageIndex === 0" @click="goToPage(pageIndex - 1)">
-                ‹ Prev
+                < Prev
             </button>
             <span>Page {{ pageIndex + 1 }} of {{ totalPages }}</span>
             <button class="secondary" :disabled="pageIndex >= totalPages - 1" @click="goToPage(pageIndex + 1)">
-                Next ›
+                Next >
             </button>
         </nav>
     </article>
@@ -174,14 +198,15 @@ async function saveEdit() {
 
             <form v-else-if="detail" @submit.prevent="saveEdit">
                 <p>Current balance: <strong>{{ formatCents(detail.storedAmountInCents) }}</strong></p>
+                <p v-if="closed" class="error"><strong>This account is closed.</strong> Reopen it to edit its limits.</p>
 
                 <label>
                     Daily transfer limit (€)
-                    <input v-model.number="dailyLimitEuros" type="number" min="0" required />
+                    <input v-model.number="dailyLimitEuros" type="number" min="0" :disabled="closed" required />
                 </label>
                 <label>
                     Absolute limit (€)
-                    <input v-model.number="absoluteLimitEuros" type="number" required />
+                    <input v-model.number="absoluteLimitEuros" type="number" :disabled="closed" required />
                 </label>
 
                 <p v-if="modalError" class="error">{{ modalError }}</p>
@@ -190,8 +215,11 @@ async function saveEdit() {
                     <button type="button" class="secondary" :disabled="submitting" @click="closeEdit">
                         Cancel
                     </button>
-                    <button type="submit" :aria-busy="submitting" :disabled="submitting">
+                    <button type="submit" :aria-busy="submitting" :disabled="submitting || closed">
                         Save changes
+                    </button>
+                    <button type="button" :class="closed ? 'reopen' : 'close-account'" :disabled="submitting" @click="toggleClosed">
+                      {{ closed ? "Reopen account" : "Close account" }}
                     </button>
                 </footer>
             </form>
@@ -199,7 +227,9 @@ async function saveEdit() {
             <template v-else>
                 <p class="error">{{ modalError }}</p>
                 <footer>
-                    <button class="secondary" @click="closeEdit">Close</button>
+                    <button class="secondary" @click="closeEdit">
+                      Close
+                    </button>
                 </footer>
             </template>
         </article>
@@ -225,6 +255,28 @@ async function saveEdit() {
 
 .error {
     color: var(--pico-del-color);
+}
+
+dialog footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+dialog footer button {
+    width: auto;
+    margin: 0;
+    white-space: nowrap;
+}
+
+dialog footer .close-account {
+    --pico-background-color: var(--pico-del-color);
+    --pico-border-color: var(--pico-del-color);
+      margin-left: auto;
+}
+
+dialog footer .reopen {
+      margin-left: auto;
 }
 
 .pagination {

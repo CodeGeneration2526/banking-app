@@ -6,7 +6,6 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -88,19 +87,10 @@ public class AccountController {
     @Operation(summary = "Update specific savings or checking account", description = "Updates the absolute limit, daily limit, or closed status of an account.")
     @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<AccountDetailResponse> updateAccount(
-            @PathVariable long id,
-            @RequestBody UpdateAccountRequest request) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-    }
-
-    @DeleteMapping("{accountId}")
-    @Operation(summary = "Close an account", description = "Employee can close a specific account from an user.")
-    @PreAuthorize("hasRole('Employee')")
-    public ResponseEntity<ApiResponse> closeAccount(@PathVariable long accountId) {
-        accountService.closeAccount(accountId);
-
-        ApiResponse resp = new ApiResponse("Account with the id " + accountId + " has been closed");
-        return ResponseEntity.ok(resp);
+            @PathVariable long accountId,
+            @Valid @RequestBody UpdateAccountRequest request) {
+        Account updated = accountService.updateAccount(accountId, request);
+        return ResponseEntity.ok(accountMapper.toAccountDetailResponse(updated));
     }
 
     @PostMapping

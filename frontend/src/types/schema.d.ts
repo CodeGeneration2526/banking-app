@@ -279,6 +279,7 @@ export interface components {
             absoluteLimitInCents: number;
             /** Format: int32 */
             dailyLimitInCents: number;
+            closed: boolean;
         };
         PageMetadata: {
             /** Format: int64 */
@@ -430,6 +431,8 @@ export interface operations {
                 iban?: string;
                 firstName?: string;
                 lastName?: string;
+                accountType?: "Checking" | "Savings" | "Atm";
+                ownerUserId?: number;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -596,7 +599,9 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                accountId: number;
+            };
             cookie?: never;
         };
         requestBody: {

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import nl.inholland.codegen.bankingapp.dtos.UpdateAccountRequest;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.*;
 import nl.inholland.codegen.bankingapp.policies.AccountCreatePolicy;
@@ -44,14 +45,6 @@ public class AccountService {
 
     public Optional<Account> getAccountInfo(long accountId) {
         return accountRepository.findByAccountId(accountId);
-    }
-
-    public void closeAccount(long accountId) {
-        Account account = accountRepository.findByAccountId(accountId)
-            .orElseThrow(() -> new NotFoundException("Account with the given account ID could not be found."));
-
-        account.setClosed(true);
-        accountRepository.save(account);
     }
 
     public Account createAccount(Account account, User issuer) {
@@ -95,5 +88,16 @@ public class AccountService {
 
         createAccount(checking, issuer);
         createAccount(savings, issuer);
+    }
+
+    public Account updateAccount(long accountId, UpdateAccountRequest request) {
+        Account account = accountRepository.findByAccountId(accountId)
+            .orElseThrow(() -> new NotFoundException("Account with the given account ID could not be found."));
+
+        if (request.absoluteLimitInCents() != null) account.setAbsoluteLimitInCents(request.absoluteLimitInCents());
+        if (request.dailyLimitInCents() != null)    account.setDailyLimitInCents(request.dailyLimitInCents());
+        if (request.closed() != null)               account.setClosed(request.closed());
+
+        return accountRepository.save(account);
     }
 }

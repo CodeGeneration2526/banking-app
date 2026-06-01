@@ -113,7 +113,9 @@ async function confirmApprove() {
                     <td>{{ user.bsn }}</td>
                     <td>{{dateFormat.format(new Date(user.registrationDate))}}</td>
                     <td>
-                        <button class="approve" @click="openApprove(user)">Approve</button>
+                        <button class="approve" @click="openApprove(user)">
+                          Approve
+                        </button>
                     </td>
                 </tr>
             </tbody>
@@ -121,11 +123,11 @@ async function confirmApprove() {
 
         <nav v-if="!loading && totalPages > 1" class="pagination">
             <button class="secondary" :disabled="pageIndex === 0" @click="goToPage(pageIndex - 1)">
-                ‹ Prev
+                < Prev
             </button>
             <span>Page {{ pageIndex + 1 }} of {{ totalPages }}</span>
             <button class="secondary" :disabled="pageIndex >= totalPages - 1" @click="goToPage(pageIndex + 1)">
-                Next ›
+                Next >
             </button>
         </nav>
     </article>
@@ -171,7 +173,9 @@ async function confirmApprove() {
             </header>
             <p>{{ successMessage }}</p>
             <footer>
-                <button class="approve" @click="successMessage = ''">OK</button>
+                <button class="approve" @click="successMessage = ''">
+                  OK
+                </button>
             </footer>
         </article>
     </dialog>

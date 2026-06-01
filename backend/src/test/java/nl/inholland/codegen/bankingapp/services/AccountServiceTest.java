@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 
+import nl.inholland.codegen.bankingapp.dtos.UpdateAccountRequest;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.Account;
@@ -100,23 +101,56 @@ class AccountServiceTest {
     }
 
     @Test
-    void closeAccount_setsClosedToTrue() {
+    void updateAccount_updatesLimitsOnly_whenClosedIsNull() {
+        checkingAccount.setAbsoluteLimitInCents(0L);
+        checkingAccount.setDailyLimitInCents(100_000L);
         when(accountRepository.findByAccountId(10L)).thenReturn(Optional.of(checkingAccount));
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        accountService.closeAccount(10L);
+        Account result = accountService.updateAccount(10L,
+                new UpdateAccountRequest(-5_000L, 200_000L, null));
 
-        assertTrue(checkingAccount.getClosed());
+        assertEquals(-5_000L, result.getAbsoluteLimitInCents());
+        assertEquals(200_000L, result.getDailyLimitInCents());
+        assertFalse(result.getClosed());
         verify(accountRepository).save(checkingAccount);
     }
 
     @Test
-    void closeAccount_throwsNotFoundException_whenAccountNotExists() {
+    void updateAccount_closesAccount_withoutTouchingLimits_whenLimitsAreNull() {
+        checkingAccount.setAbsoluteLimitInCents(0L);
+        checkingAccount.setDailyLimitInCents(100_000L);
+        when(accountRepository.findByAccountId(10L)).thenReturn(Optional.of(checkingAccount));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Account result = accountService.updateAccount(10L,
+                new UpdateAccountRequest(null, null, true));
+
+        assertTrue(result.getClosed());
+        assertEquals(0L, result.getAbsoluteLimitInCents());
+        assertEquals(100_000L, result.getDailyLimitInCents());
+    }
+
+    @Test
+    void updateAccount_reopensAccount_whenClosedIsFalse() {
+        checkingAccount.setClosed(true);
+        when(accountRepository.findByAccountId(10L)).thenReturn(Optional.of(checkingAccount));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Account result = accountService.updateAccount(10L,
+                new UpdateAccountRequest(null, null, false));
+
+        assertFalse(result.getClosed());
+    }
+
+    @Test
+    void updateAccount_throwsNotFoundException_whenAccountNotExists() {
         when(accountRepository.findByAccountId(999L)).thenReturn(Optional.empty());
 
         NotFoundException ex = assertThrows(NotFoundException.class,
-                () -> accountService.closeAccount(999L));
+                () -> accountService.updateAccount(999L, new UpdateAccountRequest(0L, 0L, null)));
         assertEquals("Account with the given account ID could not be found.", ex.getMessage());
+        verify(accountRepository, never()).save(any());
     }
 
     @Test
