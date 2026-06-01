@@ -55,21 +55,38 @@ public class AccountController {
             @ParameterObject @PageableDefault(size = 10, sort = "accountId", direction = Sort.Direction.DESC) Pageable pageable
     )
     {
-        Page<AccountSummaryResponse> resp = accountService.searchCheckingAccounts(firstName, lastName, iban, pageable)
-            .map(accountMapper::toAccountSummaryResponse);
+        User user = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
+
+        Page<AccountSummaryResponse> resp;
+        // this endpoint now works in two modes. A search mode, which will fetch all
+        // accounts. And a non search mode, this will disable the search parameters and
+        // simply return accounts according to the user's auth level. For Employees, all
+        // accounts will be returned. For non employees, only their own.
+        boolean searchMode = Boolean.TRUE.equals(search); // prevents nullptr excp
+        if (searchMode) {
+            resp = accountService.searchCheckingAccounts(firstName, lastName, iban, pageable).map(accountMapper::toAccountSummaryResponse);
+        } else if (user.getRole() == User.Role.Employee) {
+            resp = accountService.getAllAccounts(pageable).map(accountMapper::toAccountSummaryResponse);
+        } else {
+            resp = accountService.getAllAccounts(user.getUserId(), pageable).map(accountMapper::toAccountSummaryResponse);
+        }
 
         return ResponseEntity.ok(new PagedModel<>(resp));
     }
 
     @GetMapping("{accountId}")
     @Operation(summary = "Get account details", description = "Returns details for a single customer account.")
-    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<AccountDetailResponse> getAccountInfo(@PathVariable long accountId) {
-        AccountDetailResponse account = accountService.getAccountInfo(accountId)
-            .map(accountMapper::toAccountDetailResponse)
+        User user = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
+
+        Account account = accountService.getAccountInfo(accountId)
             .orElseThrow(() -> new NotFoundException("Account ID does not exist"));
 
-        return ResponseEntity.ok(account);
+        if (user.getRole() != User.Role.Employee && account.getOwner().getUserId() != user.getUserId()) {
+            throw new AuthenticationException();
+        }
+
+        return ResponseEntity.ok(accountMapper.toAccountDetailResponse(account));
     }
 
     @PatchMapping("{accountId}")
@@ -83,8 +100,16 @@ public class AccountController {
 
     @DeleteMapping("{accountId}")
     @Operation(summary = "Close an account", description = "Employee can close a specific account from an user.")
-    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<ApiResponse> closeAccount(@PathVariable long accountId) {
+        User user = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
+
+        Account account = accountService.getAccountInfo(accountId)
+            .orElseThrow(() -> new NotFoundException("Account ID does not exist"));
+
+        if (user.getRole() != User.Role.Employee && account.getOwner().getUserId() != user.getUserId()) {
+            throw new AuthenticationException();
+        }
+
         accountService.closeAccount(accountId);
 
         ApiResponse resp = new ApiResponse("Account with the id " + accountId + " has been closed");
