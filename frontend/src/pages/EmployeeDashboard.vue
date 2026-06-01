@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import EmployeeUsers from "@/pages/employee/EmployeeUsers.vue";
+import EmployeeAccounts from "@/pages/employee/EmployeeAccounts.vue";
 import EmployeeApprovals from "@/pages/employee/EmployeeApprovals.vue";
 import EmployeeTransactions from "@/pages/employee/EmployeeTransactions.vue";
 
 // All the sidebar entries and corresponding components
 const sections = [
-    { key: "users", label: "View Users", component: EmployeeUsers },
-    { key: "approvals", label: "Approve Customers", component: EmployeeApprovals },
+    { key: "approvals", label: "Approve Users", component: EmployeeApprovals },
+    { key: "accounts", label: "Accounts", component: EmployeeAccounts },
     { key: "transactions", label: "Transactions", component: EmployeeTransactions },
 ] as const;
 

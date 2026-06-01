@@ -6,153 +6,162 @@ import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.repositories.AccountRepository;
 import nl.inholland.codegen.bankingapp.repositories.TransactionRepository;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
-import nl.inholland.codegen.bankingapp.utils.IbanUtil;
+import nl.inholland.codegen.bankingapp.services.AccountService;
+import nl.inholland.codegen.bankingapp.services.TransactionService;
+import nl.inholland.codegen.bankingapp.services.UserService;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Seeds demo data by going through the same services the API uses, so the seeded
+ * state is always consistent with the real approval / transfer rules.
+ *
+ * Logins (password "Customer1!" for customers, "Employee1!/Employee2!" for staff):
+ *   - Employees:           john.admin@bank.com, sarah.smith@bank.com
+ *   - Known customers:     alice.johnson@email.com, bob.williams@email.com (from the README)
+ *   - Approved customers:  approved1@email.com … approved23@email.com (random names)
+ *   - Pending customers:   pending1@email.com  … pending25@email.com  (random names)
+ */
 @Component
 public class DataSeeder implements ApplicationRunner {
 
+    private static final int COUNT = 25;
+    private static final String CUSTOMER_PASSWORD = "Customer1!";
+
+    private static final String[] NAMES = {
+        "Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah",
+        "Ivan", "Julia", "Kevin", "Laura", "Mason", "Nina", "Oscar"
+    };
+
+    private final java.util.Random random = new java.util.Random();
+
+    private final UserService userService;
+    private final AccountService accountService;
+    private final TransactionService transactionService;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final IbanUtil ibanUtil;
 
-    public DataSeeder(UserRepository userRepository, AccountRepository accountRepository,
-                      TransactionRepository transactionRepository, PasswordEncoder passwordEncoder,
-                      IbanUtil ibanUtil) {
+    public DataSeeder(UserService userService, AccountService accountService,
+                      TransactionService transactionService, UserRepository userRepository,
+                      AccountRepository accountRepository, TransactionRepository transactionRepository) {
+        this.userService = userService;
+        this.accountService = accountService;
+        this.transactionService = transactionService;
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
-        this.passwordEncoder = passwordEncoder;
-		this.ibanUtil = ibanUtil;
     }
 
     @Override
     public void run(ApplicationArguments args) {
-        // Employees
-        User emp1 = userRepository.save(User.builder()
-                .firstName("John").lastName("Admin")
-                .email("john.admin@bank.com").phoneNumber("+31611111111")
-                .bsn("111111111").password(passwordEncoder.encode("Employee1!"))
-                .role(User.Role.Employee).build());
+        User emp1 = createEmployee("John", "Admin", "john.admin@bank.com", "Employee1!", 1);
         // Self-approval: save again with approvedBy set (registrationDate is updatable=false, unaffected)
         emp1.setApprovedBy(emp1);
         emp1 = userRepository.save(emp1);
+        createEmployee("Sarah", "Smith", "sarah.smith@bank.com", "Employee2!", 2);
 
-        User emp2 = userRepository.save(User.builder()
-                .firstName("Sarah").lastName("Smith")
-                .email("sarah.smith@bank.com").phoneNumber("+31622222222")
-                .bsn("222222222").password(passwordEncoder.encode("Employee2!"))
-                .role(User.Role.Employee).approvedBy(emp1).build());
+        // 25 pending customers: registered but never approved, so they have no accounts.
+        for (int i = 1; i <= COUNT; i++) {
+            String firstName = randomName();
+            String lastName = randomName();
+            registerCustomer(firstName, lastName, i + firstName + "." + lastName + "@email.com", 100 + i);
+        }
 
-        // Customers
-        User alice = userRepository.save(User.builder()
-                .firstName("Alice").lastName("Johnson")
-                .email("alice.johnson@email.com").phoneNumber("+31633333333")
-                .bsn("333333333").password(passwordEncoder.encode("Customer1!"))
-                .approvedBy(emp1).build());
+        // Approved customers (approved via the service, which also creates their accounts).
+        List<Account> checkingAccounts = new ArrayList<>();
 
-        User bob = userRepository.save(User.builder()
-                .firstName("Bob").lastName("Williams")
-                .email("bob.williams@email.com").phoneNumber("+31644444444")
-                .bsn("444444444").password(passwordEncoder.encode("Customer1!"))
-                .approvedBy(emp1).build());
+        // Known logins from the README, hardcoded for consistent manual testing.
+        approveCustomer("Alice", "Johnson", "alice.johnson@email.com", 300, emp1, checkingAccounts);
+        approveCustomer("Bob", "Williams", "bob.williams@email.com", 301, emp1, checkingAccounts);
 
-        User charlie = userRepository.save(User.builder()
-                .firstName("Charlie").lastName("Brown")
-                .email("charlie.brown@email.com").phoneNumber("+31655555555")
-                .bsn("555555555").password(passwordEncoder.encode("Customer1!"))
-                .approvedBy(emp2).build());
+        // The rest get random names; total stays at COUNT.
+        for (int i = 1; i <= COUNT; i++) {
+            String firstName = randomName();
+            String lastName = randomName();
+            approveCustomer(firstName, lastName, firstName + "." + lastName + i + "@email.com", 200 + i, emp1, checkingAccounts);
+        }
 
-        // Unapproved customers (no accounts, approvedBy left null)
-        userRepository.save(User.builder()
-                .firstName("Diana").lastName("Prince")
-                .email("diana.prince@email.com").phoneNumber("+31666666666")
-                .bsn("666666666").password(passwordEncoder.encode("Customer1!")).build());
+        seedTransactions(checkingAccounts, emp1);
+    }
 
-        userRepository.save(User.builder()
-                .firstName("Ethan").lastName("Hunt")
-                .email("ethan.hunt@email.com").phoneNumber("+31677777777")
-                .bsn("777777777").password(passwordEncoder.encode("Customer1!")).build());
+    /** Registers a customer, approves them through the service, and funds their accounts. */
+    private void approveCustomer(String firstName, String lastName, String email, int n,
+                                 User issuer, List<Account> checkingAccounts) {
+        User customer = registerCustomer(firstName, lastName, email, n);
+        accountService.approveAndCreateAccounts(customer, issuer, Account.DEFAULT_ABSOLUTE_LIMIT, Account.DEFAULT_DAILY_LIMIT);
 
-        userRepository.save(User.builder()
-                .firstName("Fiona").lastName("Green")
-                .email("fiona.green@email.com").phoneNumber("+31688888888")
-                .bsn("888888888").password(passwordEncoder.encode("Customer1!")).build());
-
-        // Accounts — balances and limits in cents
-        //   dailyLimit: €1,000  absoluteLimit: €-100
-        Account aliceChecking  = saveAccount(alice,   Account.AccountType.Checking, "NL91INGB0001000001", 150000L,  100000L, -10000L);
-        Account aliceSavings   = saveAccount(alice,   Account.AccountType.Savings,  null, 250000L,  100000L,      0L);
-        Account bobChecking    = saveAccount(bob,     Account.AccountType.Checking, "NL91INGB0001000003",  75000L,  100000L, -10000L);
-        Account bobSavings     = saveAccount(bob,     Account.AccountType.Savings,  null, 320000L,  100000L,      0L);
-        Account charlieChecking = saveAccount(charlie, Account.AccountType.Checking, "NL91INGB0001000005", 430000L, 100000L, -10000L);
-        Account charlieSavings  = saveAccount(charlie, Account.AccountType.Savings,  null, 120000L, 100000L,      0L);
-
-        // Transactions spread across last 30 days, initiated by emp1
-        List<Account> accts = List.of(
-                aliceChecking, aliceSavings,
-                bobChecking, bobSavings,
-                charlieChecking, charlieSavings);
-
-        // {senderIdx, receiverIdx, amountInCents, daysAgo}
-        long[][] txns = {
-                {0, 2,  5000, 29},   // Alice checking → Bob checking      €50.00
-                {2, 4,  2500, 26},   // Bob checking   → Charlie checking   €25.00
-                {4, 0, 10000, 23},   // Charlie checking → Alice checking  €100.00
-                {1, 3, 15000, 20},   // Alice savings  → Bob savings       €150.00
-                {0, 4,  3000, 18},   // Alice checking → Charlie checking   €30.00
-                {2, 0,  7500, 15},   // Bob checking   → Alice checking     €75.00
-                {4, 2, 20000, 12},   // Charlie checking → Bob checking    €200.00
-                {3, 1,  5000,  9},   // Bob savings    → Alice savings      €50.00
-                {0, 2,  1200,  6},   // Alice checking → Bob checking       €12.00
-                {5, 1,  8000,  3},   // Charlie savings → Alice savings     €80.00
-                {0, 4,  4500,  2},   // Alice checking → Charlie checking   €45.00
-                {2, 0, 13000,  2},   // Bob checking   → Alice checking    €130.00
-                {4, 2,  6000,  1},   // Charlie checking → Bob checking     €60.00
-                {0, 2,  9900,  1},   // Alice checking → Bob checking       €99.00
-                {2, 4, 11500,  0},   // Bob checking   → Charlie checking  €115.00
-        };
-
-        LocalDateTime now = LocalDateTime.now();
-        for (long[] tx : txns) {
-            Transaction t = new Transaction();
-            t.setSenderAccount(accts.get((int) tx[0]));
-            t.setReceiverAccount(accts.get((int) tx[1]));
-            t.setAmountInCents(tx[2]);
-            t.setTimestamp(now.minusDays(tx[3]));
-            t.setInitiatedBy(emp1);
-            transactionRepository.save(t);
+        // Give each account an opening balance (there is no deposit endpoint to go through).
+        for (Account account : accountRepository.findByOwner(customer)) {
+            long opening = account.getAccountType() == Account.AccountType.Checking ? 500_000L : 1_000_000L;
+            account.setStoredAmountInCents(opening);
+            accountRepository.save(account);
+            if (account.getAccountType() == Account.AccountType.Checking) {
+                checkingAccounts.add(account);
+            }
         }
     }
 
-    private Account saveAccount(User owner, Account.AccountType type, String iban, long balanceCents,
-                                 long dailyLimitCents, long absoluteLimitCents) {
-        long accountNumber = ibanUtil.newAccountNumber();
+    /**
+     * Runs employee-initiated checking-to-checking transfers through the real
+     * TransactionService (so balances and limits are honoured), then back-dates
+     * each one to spread the history over the last 30 days.
+     */
+    private void seedTransactions(List<Account> checking, User initiator) {
+        LocalDateTime now = LocalDateTime.now();
+        int day = 0;
 
-        Account a = new Account();
-        a.setOwner(owner);
-        a.setAccountType(type);
-        a.setIban(iban);
-        a.setAccountNumber(accountNumber);
-        a.setStoredAmountInCents(balanceCents);
-        a.setDailyLimitInCents(dailyLimitCents);
-        a.setAbsoluteLimitInCents(absoluteLimitCents);
-        // a.setCreationDate(LocalDateTime.now());
-        a.setClosed(false);
+        // Two passes so each customer both sends and receives a couple of transfers.
+        for (int round = 0; round < 2; round++) {
+            for (int i = 0; i < checking.size(); i++) {
+                Account sender = checking.get(i);
+                Account receiver = checking.get((i + 1 + round * 6) % checking.size());
+                long amountInCents = 1_000L + (i % 10) * 1_500L + round * 2_000L;
 
-        if (type == Account.AccountType.Checking) {
-            a.setIban(ibanUtil.generateIban(accountNumber));
+                Transaction t = transactionService.executeTransaction(
+                    sender.getAccountNumber(), receiver.getAccountNumber(), amountInCents, initiator);
+
+                // executeTransaction stamps "now"; back-date for a realistic spread.
+                t.setTimestamp(now.minusDays(day % 30).minusHours(i));
+                transactionRepository.save(t);
+                day++;
+            }
         }
+    }
 
-        return accountRepository.save(a);
+    private User createEmployee(String firstName, String lastName, String email, String password, int n) {
+        User employee = User.builder()
+            .firstName(firstName).lastName(lastName)
+            .email(email).phoneNumber(phone(n)).bsn(bsn(n))
+            .password(password).role(User.Role.Employee)
+            .build();
+        return userService.register(employee); // hashes the password and persists
+    }
+
+    private User registerCustomer(String firstName, String lastName, String email, int n) {
+        User customer = User.builder()
+            .firstName(firstName).lastName(lastName)
+            .email(email).phoneNumber(phone(n)).bsn(bsn(n))
+            .password(CUSTOMER_PASSWORD)
+            .build(); // role defaults to Customer, approvedBy stays null
+        return userService.register(customer);
+    }
+
+    private String randomName() {
+        return NAMES[random.nextInt(NAMES.length)];
+    }
+
+    private String phone(int n) {
+        return String.format("+3160%07d", n);
+    }
+
+    private String bsn(int n) {
+        return String.format("%09d", n);
     }
 }
