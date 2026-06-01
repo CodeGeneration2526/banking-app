@@ -3,6 +3,7 @@ package nl.inholland.codegen.bankingapp.controllers;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
@@ -50,28 +51,25 @@ public class AccountController {
         summary = "List customer savings and checking accounts",
         description = "Returns all accounts for the authenticated user, or can be used to search for other users. Employees can view all accounts.")
     public ResponseEntity<PagedModel<AccountSummaryResponse>> listAllAccounts(
-            @RequestParam(required = false) @DefaultValue("false") Boolean search,
             @RequestParam(required = false) String iban,
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) Account.AccountType accountType,
+            @RequestParam(required = false) Long ownerUserId,
             @ParameterObject @PageableDefault(size = 10, sort = "accountId", direction = Sort.Direction.DESC) Pageable pageable
     )
     {
         User user = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
 
-        Page<AccountSummaryResponse> resp;
-        // this endpoint now works in two modes. A search mode, which will fetch all
-        // accounts. And a non search mode, this will disable the search parameters and
-        // simply return accounts according to the user's auth level. For Employees, all
-        // accounts will be returned. For non employees, only their own.
-        if (search) {
-            resp = accountService.searchCheckingAccounts(firstName, lastName, iban, pageable).map(accountMapper::toAccountSummaryResponse);
-        } else if (user.getRole() == User.Role.Employee) {
-            resp = accountService.getAllAccounts(pageable).map(accountMapper::toAccountSummaryResponse);
-        } else {
-            resp = accountService.getAllAccounts(user.getUserId(), pageable).map(accountMapper::toAccountSummaryResponse);
-        }
+        Specification<Account> spec = Specification
+            .where(AccountSpecifications.visibleTo(user))
+            .and(AccountSpecifications.firstNameContains(firstName))
+            .and(AccountSpecifications.lastNameContains(lastName))
+            .and(AccountSpecifications.ibanEquals(iban))
+            .and(AccountSpecifications.accountTypeEquals(accountType))
+            .and(AccountSpecifications.ownerUserId(ownerUserId));
 
+        Page<AccountSummaryResponse> resp = accountService.getAllAccounts(spec, pageable).map(accountMapper::toAccountSummaryResponse);
         return ResponseEntity.ok(new PagedModel<>(resp));
     }
 

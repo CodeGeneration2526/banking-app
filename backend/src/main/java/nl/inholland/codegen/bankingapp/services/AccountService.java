@@ -38,26 +38,8 @@ public class AccountService {
 		this.ibanUtil = ibanUtil;
     }
 
-    public Page<Account> searchCheckingAccounts(
-            String firstName,
-            String lastName,
-            String iban,
-            Pageable pageable
-    ) {
-        Specification<Account> spec = Specification.where(AccountSpecifications.isCheckingAccount())
-            .and(AccountSpecifications.firstNameContains(firstName))
-            .and(AccountSpecifications.lastNameContains(lastName))
-            .and(AccountSpecifications.ibanEquals(iban));
-
+    public Page<Account> getAllAccounts(Specification<Account> spec, Pageable pageable) {
         return accountRepository.findAll(spec, pageable);
-    }
-
-    public Page<Account> getAllAccounts(Pageable pageable) {
-        return accountRepository.findAll(pageable);
-    }
-
-    public Page<Account> getAllAccounts(long userId, Pageable pageable) {
-        return accountRepository.findByOwner_UserId(userId, pageable);
     }
 
     public Optional<Account> getAccountInfo(long accountId) {
