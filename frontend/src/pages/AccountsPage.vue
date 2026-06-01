@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { api } from '@/api';
 import { useAuthStore } from '@/stores/auth';
-import type { AccountDetail } from '@/types/api';
+import type { AccountDetail, AccountSummary } from '@/types/api';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -17,6 +17,17 @@ const transferError = ref("");
 const successMessage = ref("");
 
 const accounts = ref<AccountDetail[]>([]);
+
+const showUserSearch = ref(false);
+const searchFirstName = ref("");
+const searchLastName = ref("");
+const searchIban = ref("");
+const searchResults = ref<AccountSummary[]>([]);
+const searchLoading = ref(false);
+const searchError = ref("");
+const searchPage = ref(0);
+const searchTotalPages = ref(0);
+const SEARCH_PAGE_SIZE = 8;
 
 const currentUserId = computed(() => auth.currentUser?.userId ?? null);
 
@@ -104,6 +115,67 @@ async function loadAccounts() {
         page++;
     }
 }
+
+async function loadUserSearchResults() {
+    searchLoading.value = true;
+    searchError.value = "";
+    try {
+        const result = await api.accounts.list({
+            page: searchPage.value,
+            size: SEARCH_PAGE_SIZE,
+            firstName: searchFirstName.value.trim() || undefined,
+            lastName: searchLastName.value.trim() || undefined,
+            iban: searchIban.value.trim() || undefined,
+        });
+        const content = result.content ?? [];
+        const filtered = content.filter(account => account.userId !== currentUserId.value);
+        searchResults.value = filtered;
+        searchTotalPages.value = result.page?.totalPages ?? 0;
+
+        if (searchResults.value.length === 0 && searchPage.value > 0) {
+            searchPage.value--;
+            await loadUserSearchResults();
+        }
+    } catch (e) {
+        searchError.value = e instanceof Error ? e.message : "Failed to search users.";
+    } finally {
+        searchLoading.value = false;
+    }
+}
+
+function openUserSearch() {
+    showUserSearch.value = true;
+    searchError.value = "";
+    if (searchResults.value.length === 0) {
+        searchPage.value = 0;
+        loadUserSearchResults();
+    }
+}
+
+function closeUserSearch() {
+    showUserSearch.value = false;
+}
+
+function submitUserSearch() {
+    searchPage.value = 0;
+    loadUserSearchResults();
+}
+
+function resetUserSearch() {
+    searchFirstName.value = "";
+    searchLastName.value = "";
+    searchIban.value = "";
+    submitUserSearch();
+}
+
+function goToSearchPage(index: number) {
+    searchPage.value = index;
+    loadUserSearchResults();
+}
+
+const hasSearchFilters = computed(() =>
+    Boolean(searchFirstName.value || searchLastName.value || searchIban.value),
+);
 
 onMounted(loadAccounts);
 
@@ -238,6 +310,9 @@ async function submitTransfer() {
 
 <template>
     <h1>Welcome back, {{ auth.currentUser?.firstName }}!</h1>
+    <button class="secondary search-users-btn" @click="openUserSearch">
+        Search other users
+    </button>
     <div v-if="!accounts.length">No Accounts</div>
     <div v-if="accounts.length" class="accounts-grid">
         <article v-for="account in accounts" :key="account.accountId" class="account-card">
@@ -335,6 +410,75 @@ async function submitTransfer() {
         </article>
     </dialog>
 
+    <dialog :open="showUserSearch">
+        <article>
+            <header>
+                <button aria-label="Close" rel="prev" @click="closeUserSearch"></button>
+                <p><strong>Search users</strong></p>
+            </header>
+
+            <form class="search-users" @submit.prevent="submitUserSearch">
+                <label>
+                    First name
+                    <input v-model.trim="searchFirstName" type="text" placeholder="First name" />
+                </label>
+                <label>
+                    Last name
+                    <input v-model.trim="searchLastName" type="text" placeholder="Last name" />
+                </label>
+                <label>
+                    IBAN
+                    <input v-model.trim="searchIban" type="text" placeholder="IBAN" />
+                </label>
+                <div class="search-actions">
+                    <button type="submit" :aria-busy="searchLoading">Search</button>
+                    <button type="button" class="secondary" :disabled="!hasSearchFilters" @click="resetUserSearch">
+                        Reset
+                    </button>
+                </div>
+            </form>
+
+            <p v-if="searchLoading" aria-busy="true">Searching users…</p>
+            <p v-else-if="searchError" class="error">{{ searchError }}</p>
+            <p v-else-if="searchResults.length === 0">No users found.</p>
+
+            <table v-else class="search-results">
+                <thead>
+                    <tr>
+                        <th scope="col">Owner</th>
+                        <th scope="col">IBAN</th>
+                        <th scope="col">Account Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="account in searchResults" :key="account.accountId">
+                        <td>{{ account.ownerFirstName }} {{ account.ownerLastName }}</td>
+                        <td>{{ account.iban ?? account.accountNumber }}</td>
+                        <td>{{ account.accountType }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <nav v-if="!searchLoading && searchTotalPages > 1" class="pagination">
+                <button
+                    class="secondary"
+                    :disabled="searchPage === 0"
+                    @click="goToSearchPage(searchPage - 1)"
+                >
+                    &lt; Prev
+                </button>
+                <span>Page {{ searchPage + 1 }} of {{ searchTotalPages }}</span>
+                <button
+                    class="secondary"
+                    :disabled="searchPage >= searchTotalPages - 1"
+                    @click="goToSearchPage(searchPage + 1)"
+                >
+                    Next &gt;
+                </button>
+            </nav>
+        </article>
+    </dialog>
+
     <dialog :open="successMessage !== ''">
         <article>
             <header>
@@ -366,6 +510,10 @@ fieldset {
     cursor: pointer;
 }
 
+.search-users-btn {
+    margin-top: 0.75rem;
+}
+
 .accounts-grid {
     display: flex;
     flex-wrap: wrap;
@@ -395,5 +543,21 @@ fieldset {
 .account-iban {
     font-size: 0.65rem;
     opacity: 0.45;
+}
+
+.search-users {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.search-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.search-results {
+    margin-top: 0.5rem;
 }
 </style>
