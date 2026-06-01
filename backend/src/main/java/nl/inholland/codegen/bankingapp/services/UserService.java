@@ -93,27 +93,20 @@ public class UserService {
         User user = getUser(userId)
             .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (user.isClosed()) {
+        boolean reopening = Boolean.FALSE.equals(request.closed());
+        if (user.isClosed() && !reopening) {
             throw new BadRequestException("Cannot update a closed account");
         }
 
         if (request.firstName() != null) user.setFirstName(request.firstName());
         if (request.lastName() != null) user.setLastName(request.lastName());
         if (request.email() != null) user.setEmail(request.email());
+        if (request.closed() != null) user.setClosed(request.closed());
 
         try {
             return userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
             throw new BadRequestException("Email is already in use");
         }
-    }
-
-    public void deleteUser(long userId) throws NotFoundException {
-        User user = getUser(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
-
-        if (user.isClosed()) return;
-        user.setClosed(true);
-        userRepository.save(user);
     }
 }

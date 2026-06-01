@@ -106,11 +106,7 @@ export interface paths {
         get: operations["getUser"];
         put?: never;
         post?: never;
-        /**
-         * Delete specific user
-         * @description Deletes a specific user, archiving their account.
-         */
-        delete: operations["deleteUser"];
+        delete?: never;
         options?: never;
         head?: never;
         /**
@@ -134,11 +130,7 @@ export interface paths {
         get: operations["getAccountInfo"];
         put?: never;
         post?: never;
-        /**
-         * Close an account
-         * @description Employee can close a specific account from an user.
-         */
-        delete: operations["closeAccount"];
+        delete?: never;
         options?: never;
         head?: never;
         /**
@@ -230,6 +222,9 @@ export interface components {
             role: "Customer" | "Employee";
             /** Format: date-time */
             registrationDate: string;
+            /** Format: int64 */
+            approvedBy?: number;
+            closed: boolean;
         };
         LoginRequest: {
             /** Format: email */
@@ -258,6 +253,7 @@ export interface components {
             lastName?: string;
             /** Format: email */
             email?: string;
+            closed?: boolean;
         };
         UpdateAccountRequest: {
             /** Format: int64 */
@@ -503,28 +499,6 @@ export interface operations {
             };
         };
     };
-    deleteUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponse"];
-                };
-            };
-        };
-    };
     updateUser: {
         parameters: {
             query?: never;
@@ -569,28 +543,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AccountDetailResponse"];
-                };
-            };
-        };
-    };
-    closeAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                accountId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponse"];
                 };
             };
         };

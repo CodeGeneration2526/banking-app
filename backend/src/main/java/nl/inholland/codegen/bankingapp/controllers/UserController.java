@@ -97,13 +97,4 @@ public class UserController {
         return ResponseEntity.ok(userMapper.toUserResponse(updated));
     }
 
-    @DeleteMapping("{userId}")
-    @Operation(summary = "Delete specific user", description = "Deletes a specific user, archiving their account.")
-    @PreAuthorize("hasRole('Employee')")
-    public ResponseEntity<ApiResponse> deleteUser(@PathVariable long userId) {
-        userService.deleteUser(userId);
-
-        ApiResponse resp = new ApiResponse("User with the id " + userId + " has been closed");
-        return ResponseEntity.ok(resp);
-    }
 }

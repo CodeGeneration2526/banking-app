@@ -95,8 +95,8 @@ public class AccountService {
             .orElseThrow(() -> new NotFoundException("Account with the given account ID could not be found."));
 
         if (request.absoluteLimitInCents() != null) account.setAbsoluteLimitInCents(request.absoluteLimitInCents());
-        if (request.dailyLimitInCents() != null)    account.setDailyLimitInCents(request.dailyLimitInCents());
-        if (request.closed() != null)               account.setClosed(request.closed());
+        if (request.dailyLimitInCents() != null) account.setDailyLimitInCents(request.dailyLimitInCents());
+        if (request.closed() != null) account.setClosed(request.closed());
 
         return accountRepository.save(account);
     }

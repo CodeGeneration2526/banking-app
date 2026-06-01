@@ -9,6 +9,7 @@ import type {
     AccountsPage,
     AccountDetail,
     UpdateAccountRequest,
+    UserPatchRequest,
 } from "@/types/api";
 import { useAuthStore } from "@/stores/auth";
 import router from "@/router";
@@ -65,6 +66,12 @@ export const api = {
             const qs = query.toString();
             return request<UsersPage>(`/users${qs ? `?${qs}` : ""}`, { method: "GET" });
         },
+        // Update a user's first name, last name, email, or closed status
+        update: (userId: number, body: UserPatchRequest) =>
+            request<User>(`/users/${userId}`, {
+                method: "PATCH",
+                body: JSON.stringify(body),
+            }),
     },
     accounts: {
         // Fetch all accounts with params to search

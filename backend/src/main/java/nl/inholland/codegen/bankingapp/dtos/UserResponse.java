@@ -30,5 +30,10 @@ public record UserResponse (
     User.Role role,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    Date registrationDate
+    Date registrationDate,
+
+    Long approvedBy,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    boolean closed
 ) {}
