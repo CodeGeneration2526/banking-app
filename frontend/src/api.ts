@@ -1,6 +1,15 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-import type { LoginResponse, User, UsersPage, NewAccountRequest, ApiMessage } from "@/types/api";
+import type {
+    LoginResponse,
+    User,
+    UsersPage,
+    NewAccountRequest,
+    ApiMessage,
+    AccountsPage,
+    AccountDetail,
+    UpdateAccountRequest,
+} from "@/types/api";
 import { useAuthStore } from "@/stores/auth";
 import router from "@/router";
 
@@ -44,7 +53,9 @@ export const api = {
         },
     },
     users: {
+        // Fetch currently logged in user
         me: () => request<User>("/users/me", { method: "GET" }),
+        // Fetch all users with params to check role and approval status
         list: (params: { page?: number; size?: number; isApproved?: boolean; role?: User["role"] } = {}) => {
             const query = new URLSearchParams();
             if (params.page !== undefined) query.set("page", String(params.page));
@@ -56,7 +67,26 @@ export const api = {
         },
     },
     accounts: {
-        // Approve a pending customer and create their checking + savings accounts.
+        // Fetch all accounts with params to search
+        list: (params: { page?: number; size?: number; firstName?: string; lastName?: string; iban?: string } = {}) => {
+            const query = new URLSearchParams();
+            if (params.page !== undefined) query.set("page", String(params.page));
+            if (params.size !== undefined) query.set("size", String(params.size));
+            if (params.firstName) query.set("firstName", params.firstName);
+            if (params.lastName) query.set("lastName", params.lastName);
+            if (params.iban) query.set("iban", params.iban);
+            const qs = query.toString();
+            return request<AccountsPage>(`/accounts${qs ? `?${qs}` : ""}`, { method: "GET" });
+        },
+        // Fetch a single account's details (balance + limits)
+        get: (accountId: number) => request<AccountDetail>(`/accounts/${accountId}`, { method: "GET" }),
+        // Update an account's limits and/or closed status
+        update: (accountId: number, body: UpdateAccountRequest) =>
+            request<AccountDetail>(`/accounts/${accountId}`, {
+                method: "PATCH",
+                body: JSON.stringify(body),
+            }),
+        // Approve a pending customer and create their checking + savings accounts
         approve: (body: NewAccountRequest) =>
             request<ApiMessage>("/accounts", {
                 method: "POST",
