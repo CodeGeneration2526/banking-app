@@ -52,6 +52,14 @@ public class AccountService {
         return accountRepository.findAll(spec, pageable);
     }
 
+    public Page<Account> getAllAccounts(Pageable pageable) {
+        return accountRepository.findAll(pageable);
+    }
+
+    public Page<Account> getAllAccounts(long userId, Pageable pageable) {
+        return accountRepository.findByOwner_UserId(userId, pageable);
+    }
+
     public Optional<Account> getAccountInfo(long accountId) {
         return accountRepository.findByAccountId(accountId);
     }
