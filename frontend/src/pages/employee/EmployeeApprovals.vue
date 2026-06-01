@@ -9,17 +9,33 @@ const error = ref("");
 
 const dateFormat = new Intl.DateTimeFormat("en-nl", { dateStyle: "medium", timeStyle: "long" });
 
+const PAGE_SIZE = 10;
+const pageIndex = ref(0);
+const totalPages = ref(0);
+
 async function loadUsers() {
     loading.value = true;
     error.value = "";
     try {
-        const page = await api.users.list({ size: 100, isApproved: false });
-        users.value = page.content ?? [];
+        const result = await api.users.list({ page: pageIndex.value, size: PAGE_SIZE, isApproved: false });
+        users.value = result.content ?? [];
+        totalPages.value = result.page?.totalPages ?? 0;
+
+        // If the last user on a page was just approved, step back to the previous page.
+        if (users.value.length === 0 && pageIndex.value > 0) {
+            pageIndex.value--;
+            await loadUsers();
+        }
     } catch {
         error.value = "Failed to load users.";
     } finally {
         loading.value = false;
     }
+}
+
+function goToPage(index: number) {
+    pageIndex.value = index;
+    loadUsers();
 }
 
 onMounted(loadUsers);
@@ -102,6 +118,16 @@ async function confirmApprove() {
                 </tr>
             </tbody>
         </table>
+
+        <nav v-if="!loading && totalPages > 1" class="pagination">
+            <button class="secondary" :disabled="pageIndex === 0" @click="goToPage(pageIndex - 1)">
+                ‹ Prev
+            </button>
+            <span>Page {{ pageIndex + 1 }} of {{ totalPages }}</span>
+            <button class="secondary" :disabled="pageIndex >= totalPages - 1" @click="goToPage(pageIndex + 1)">
+                Next ›
+            </button>
+        </nav>
     </article>
 
     <dialog :open="selected !== null">
@@ -160,5 +186,17 @@ async function confirmApprove() {
 
 .error {
     color: var(--pico-del-color);
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.pagination button {
+    margin: 0;
+    width: auto;
 }
 </style>

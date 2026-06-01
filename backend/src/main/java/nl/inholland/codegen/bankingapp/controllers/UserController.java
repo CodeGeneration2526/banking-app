@@ -44,7 +44,7 @@ public class UserController {
     public ResponseEntity<PagedModel<UserResponse>> getAllUsers(
             @RequestParam(required = false) Boolean isApproved,
             @RequestParam(required = false) User.Role role,
-            @ParameterObject @PageableDefault(size = 10, sort = "registrationDate", direction = Sort.Direction.DESC) Pageable pageable
+            @ParameterObject @PageableDefault(size = 10, sort = "registrationDate", direction = Sort.Direction.ASC) Pageable pageable
     ) {
 
         // I can use a specification here, but this is truly very simple logic and complexity is not needed at this point
