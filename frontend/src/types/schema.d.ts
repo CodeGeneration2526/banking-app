@@ -272,6 +272,8 @@ export interface components {
             /** Format: int64 */
             accountId: number;
             iban?: string;
+            /** Format: int64 */
+            accountNumber: number;
             accountType: string;
             /** Format: int64 */
             storedAmountInCents: number;
@@ -309,6 +311,8 @@ export interface components {
             iban?: string;
             ownerFirstName: string;
             ownerLastName: string;
+            /** Format: int64 */
+            ownerUserId: number;
             accountType: string;
         };
         PagedModelAccountSummaryResponse: {

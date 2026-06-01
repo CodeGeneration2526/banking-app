@@ -74,13 +74,17 @@ public class AccountController {
 
     @GetMapping("{accountId}")
     @Operation(summary = "Get account details", description = "Returns details for a single customer account.")
-    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<AccountDetailResponse> getAccountInfo(@PathVariable long accountId) {
-        AccountDetailResponse account = accountService.getAccountInfo(accountId)
-            .map(accountMapper::toAccountDetailResponse)
+        User user = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
+
+        Account account = accountService.getAccountInfo(accountId)
             .orElseThrow(() -> new NotFoundException("Account ID does not exist"));
 
-        return ResponseEntity.ok(account);
+        if (user.getRole() != User.Role.Employee && account.getOwner().getUserId() != user.getUserId()) {
+            throw new AuthenticationException();
+        }
+
+        return ResponseEntity.ok(accountMapper.toAccountDetailResponse(account));
     }
 
     @PatchMapping("{accountId}")

@@ -2,6 +2,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 import type {
     LoginResponse,
+    RegisterRequest,
     User,
     UsersPage,
     NewAccountRequest,
@@ -17,6 +18,14 @@ import type {
 } from "@/types/api";
 import { useAuthStore } from "@/stores/auth";
 import router from "@/router";
+
+export class ApiError extends Error {
+    status: number;
+    constructor(status: number, message: string) {
+        super(message);
+        this.status = status;
+    }
+}
 
 async function request<T>(path: string, options: RequestInit): Promise<T> {
     const auth = useAuthStore();
@@ -48,6 +57,12 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
     return response.json();
 }
 
+interface Pagable {
+    page?: number,
+    size?: number,
+    sort?: string,
+}
+
 export const api = {
     auth: {
         login(email: string, password: string) {
@@ -56,6 +71,11 @@ export const api = {
                 body: JSON.stringify({ email, password }),
             });
         },
+        register: (body: RegisterRequest) =>
+            request<User>("/auth/register", {
+                method: "POST",
+                body: JSON.stringify(body),
+            }),
     },
     users: {
         // Fetch currently logged in user
@@ -79,13 +99,18 @@ export const api = {
     },
     accounts: {
         // Fetch all accounts with params to search
-        list: (params: { page?: number; size?: number; firstName?: string; lastName?: string; iban?: string } = {}) => {
+        list: (params: { firstName?: string, lastName?: string, iban?: string, ownerUserId?: number } & Pagable = {}) => {
             const query = new URLSearchParams();
+
             if (params.page !== undefined) query.set("page", String(params.page));
             if (params.size !== undefined) query.set("size", String(params.size));
+            if (params.sort !== undefined) query.set("sort", params.sort);
+
             if (params.firstName) query.set("firstName", params.firstName);
             if (params.lastName) query.set("lastName", params.lastName);
             if (params.iban) query.set("iban", params.iban);
+            if (params.ownerUserId) query.set("ownerUserId", String(params.ownerUserId));
+
             const qs = query.toString();
             return request<AccountsPage>(`/accounts${qs ? `?${qs}` : ""}`, { method: "GET" });
         },
