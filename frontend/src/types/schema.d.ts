@@ -106,11 +106,7 @@ export interface paths {
         get: operations["getUser"];
         put?: never;
         post?: never;
-        /**
-         * Delete specific user
-         * @description Deletes a specific user, archiving their account.
-         */
-        delete: operations["deleteUser"];
+        delete?: never;
         options?: never;
         head?: never;
         /**
@@ -134,11 +130,7 @@ export interface paths {
         get: operations["getAccountInfo"];
         put?: never;
         post?: never;
-        /**
-         * Close an account
-         * @description Employee can close a specific account from an user.
-         */
-        delete: operations["closeAccount"];
+        delete?: never;
         options?: never;
         head?: never;
         /**
@@ -198,11 +190,18 @@ export interface components {
             /** Format: int64 */
             amountInCents: number;
         };
+        TransactionParty: {
+            identifier: string;
+            ownerFirstName: string;
+            ownerLastName: string;
+            /** Format: int64 */
+            ownerId: number;
+        };
         TransactionResponse: {
             /** Format: int64 */
             transactionId: number;
-            from: string;
-            to: string;
+            from: components["schemas"]["TransactionParty"];
+            to: components["schemas"]["TransactionParty"];
             /** Format: int64 */
             amountInCents: number;
             /** Format: date-time */
@@ -230,6 +229,8 @@ export interface components {
             role: "Customer" | "Employee";
             /** Format: date-time */
             registrationDate: string;
+            approvedBy?: string;
+            closed: boolean;
         };
         LoginRequest: {
             /** Format: email */
@@ -258,6 +259,7 @@ export interface components {
             lastName?: string;
             /** Format: email */
             email?: string;
+            closed?: boolean;
         };
         UpdateAccountRequest: {
             /** Format: int64 */
@@ -279,6 +281,7 @@ export interface components {
             absoluteLimitInCents: number;
             /** Format: int32 */
             dailyLimitInCents: number;
+            closed: boolean;
         };
         PageMetadata: {
             /** Format: int64 */
@@ -301,6 +304,8 @@ export interface components {
         AccountSummaryResponse: {
             /** Format: int64 */
             accountId: number;
+            /** Format: int64 */
+            accountNumber: number;
             iban?: string;
             ownerFirstName: string;
             ownerLastName: string;
@@ -430,6 +435,8 @@ export interface operations {
                 iban?: string;
                 firstName?: string;
                 lastName?: string;
+                accountType?: "Checking" | "Savings" | "Atm";
+                ownerUserId?: number;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -500,28 +507,6 @@ export interface operations {
             };
         };
     };
-    deleteUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponse"];
-                };
-            };
-        };
-    };
     updateUser: {
         parameters: {
             query?: never;
@@ -570,33 +555,13 @@ export interface operations {
             };
         };
     };
-    closeAccount: {
+    updateAccount: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 accountId: number;
             };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponse"];
-                };
-            };
-        };
-    };
-    updateAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
             cookie?: never;
         };
         requestBody: {

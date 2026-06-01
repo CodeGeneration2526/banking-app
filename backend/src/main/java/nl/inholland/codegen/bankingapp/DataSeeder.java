@@ -10,6 +10,7 @@ import nl.inholland.codegen.bankingapp.services.AccountService;
 import nl.inholland.codegen.bankingapp.services.TransactionService;
 import nl.inholland.codegen.bankingapp.services.UserService;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -98,7 +99,7 @@ public class DataSeeder implements ApplicationRunner {
         accountService.approveAndCreateAccounts(customer, issuer, Account.DEFAULT_ABSOLUTE_LIMIT, Account.DEFAULT_DAILY_LIMIT);
 
         // Give each account an opening balance (there is no deposit endpoint to go through).
-        for (Account account : accountRepository.findByOwner(customer)) {
+        for (Account account : accountRepository.findByOwner_UserId(customer.getUserId(), Pageable.unpaged())) {
             long opening = account.getAccountType() == Account.AccountType.Checking ? 500_000L : 1_000_000L;
             account.setStoredAmountInCents(opening);
             accountRepository.save(account);

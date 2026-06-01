@@ -10,10 +10,10 @@ public record TransactionResponse (
     long transactionId,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    String from,
+    TransactionParty from,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    String to,
+    TransactionParty to,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     long amountInCents,

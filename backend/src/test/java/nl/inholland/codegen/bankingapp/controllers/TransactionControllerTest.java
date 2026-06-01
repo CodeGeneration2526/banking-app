@@ -137,8 +137,8 @@ class TransactionControllerTest {
                 .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.amountInCents").value(25_000))
-            .andExpect(jsonPath("$.from").value(accAchecking1.getIban()))
-            .andExpect(jsonPath("$.to").value(accAchecking2.getIban()))
+            .andExpect(jsonPath("$.from.identifier").value(accAchecking1.getIban()))
+            .andExpect(jsonPath("$.to.identifier").value(accAchecking2.getIban()))
             .andExpect(jsonPath("$.initiatedBy").value(customerA.getEmail()))
             .andExpect(jsonPath("$.transactionId").isNumber());
 

@@ -25,5 +25,8 @@ public record AccountDetailResponse (
     int absoluteLimitInCents,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-    int dailyLimitInCents
+    int dailyLimitInCents,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    boolean closed
 ) {}

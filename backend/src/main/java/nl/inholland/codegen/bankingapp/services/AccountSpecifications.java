@@ -22,10 +22,23 @@ public final class AccountSpecifications {
             : cb.like(cb.lower(root.get("owner").get("lastName")), "%" + lastName.toLowerCase() + "%");
     }
 
-    public static Specification<Account> ibanEquals(String iban) {
-        return (root, query, cb) -> iban == null || iban.isBlank()
-            ? cb.conjunction()
-            : cb.equal(root.get("iban"), iban);
+    public static Specification<Account> ibanOrAccountNumberEquals(String value) {
+        return (root, query, cb) -> {
+            if (value == null || value.isBlank()) {
+                return cb.conjunction();
+            }
+
+            String trimmed = value.trim();
+            Predicate ibanMatch = cb.equal(root.get("iban"), trimmed);
+
+            try {
+                long accountNumber = Long.parseLong(trimmed);
+                return cb.or(ibanMatch, cb.equal(root.get("accountNumber"), accountNumber));
+            } catch (NumberFormatException e) {
+                // Not a number (e.g. an IBAN) — match on IBAN only.
+                return ibanMatch;
+            }
+        };
     }
 
     public static Specification<Account> visibleTo(User user) {

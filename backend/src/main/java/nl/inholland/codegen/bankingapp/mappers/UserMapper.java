@@ -10,6 +10,7 @@ import nl.inholland.codegen.bankingapp.models.User;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
+    @Mapping(target = "approvedBy", source = "approvedBy.email")
     public UserResponse toUserResponse(User user);
 
     @Mapping(target = "userId", ignore = true)
