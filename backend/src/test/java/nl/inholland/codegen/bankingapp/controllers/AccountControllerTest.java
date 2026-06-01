@@ -109,7 +109,8 @@ class AccountControllerTest {
         mockMvc.perform(get("/accounts")
                 .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content").isArray());
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content[0].ownerUserId").exists());
     }
 
     @Test
@@ -120,7 +121,8 @@ class AccountControllerTest {
                 .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content.length()").value(1))
-            .andExpect(jsonPath("$.content[0].iban").value(accAchecking1.getIban()));
+            .andExpect(jsonPath("$.content[0].iban").value(accAchecking1.getIban()))
+            .andExpect(jsonPath("$.content[0].ownerUserId").value(customerA.getUserId()));
     }
 
     @Test
@@ -130,7 +132,8 @@ class AccountControllerTest {
                 .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content.length()").value(1))
-            .andExpect(jsonPath("$.content[0].accountId").value(accAsavings.getAccountId()));
+            .andExpect(jsonPath("$.content[0].accountId").value(accAsavings.getAccountId()))
+            .andExpect(jsonPath("$.content[0].ownerUserId").value(customerA.getUserId()));
     }
 
     @Test
