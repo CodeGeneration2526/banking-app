@@ -16,4 +16,5 @@ public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpec
     Optional<Account> findByAccountNumber(long accountNumber);
 
     Page<Account> findByOwner_UserId(long userId, Pageable pageable);
+    List<Account> findByOwner(User user);
 }

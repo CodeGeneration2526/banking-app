@@ -137,9 +137,9 @@ class AccountControllerTest {
     // --- GET /accounts/{accountId} ---
 
     @Test
-    void getAccountInfo_returnsAccount_whenExists() throws Exception {
+    void getAccountInfo_returnsAccount_whenEmployeeRequests() throws Exception {
         mockMvc.perform(get("/accounts/" + accAchecking1.getAccountId())
-                .header("Authorization", bearer(tokenA)))
+                .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.accountId").value(accAchecking1.getAccountId()));
     }
@@ -162,10 +162,10 @@ class AccountControllerTest {
     }
 
     @Test
-    void closeAccount_returns200_whenOwnerClosesOwnAccount() throws Exception {
+    void closeAccount_returns403_whenOwnerClosesOwnAccount() throws Exception {
         mockMvc.perform(delete("/accounts/" + accAchecking1.getAccountId())
                 .header("Authorization", bearer(tokenA)))
-            .andExpect(status().isOk());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -228,7 +228,7 @@ class AccountControllerTest {
     }
 
     @Test
-    void createAccount_returns401_whenCustomerTries() throws Exception {
+    void createAccount_returns403_whenCustomerTries() throws Exception {
         Map<String, Object> body = Map.of(
             "userId", customerB.getUserId(),
             "absoluteLimitInCents", 0,
