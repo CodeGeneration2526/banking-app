@@ -2,21 +2,80 @@
 import { api } from '@/api';
 import { useAuthStore } from '@/stores/auth';
 import type { AccountDetail } from '@/types/api';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const auth = useAuthStore();
 
 const transferState = ref<AccountDetail|null>(null);
+const transferReceiver = ref("");
+const transferAmountEuros = ref("");
+const transferMode = ref<"ownSavings" | "other">("ownSavings");
+const submitting = ref(false);
+const transferError = ref("");
+const successMessage = ref("");
 
 const accounts = ref<AccountDetail[]>([]);
 
-onMounted(async () => {
+const currentUserId = computed(() => auth.currentUser?.userId ?? null);
+
+const senderIdentifier = computed(() => {
+    if (!transferState.value) return "";
+    return String(transferState.value.iban ?? transferState.value.accountNumber ?? "");
+});
+
+const ownAccounts = computed(() =>
+    accounts.value.filter(account => account.userId === currentUserId.value),
+);
+
+const ownAccountIdentifiers = computed(() =>
+    new Set(ownAccounts.value.map(account => String(account.iban ?? account.accountNumber))),
+);
+
+const eligibleOwnAccounts = computed(() => {
+    if (!transferState.value) return [];
+
+    const sender = transferState.value;
+    const others = ownAccounts.value.filter(account => account.accountId !== sender.accountId);
+
+    if (sender.accountType === "Checking") {
+        return others.filter(account => account.accountType === "Savings");
+    }
+
+    if (sender.accountType === "Savings") {
+        return others;
+    }
+
+    return others;
+});
+
+const canSubmitTransfer = computed(() => {
+    if (!transferState.value) return false;
+    if (submitting.value) return false;
+
+    if (transferState.value.accountType === "Savings") {
+        return eligibleOwnAccounts.value.length > 0;
+    }
+
+    if (transferState.value.accountType === "Checking" && transferMode.value === "ownSavings") {
+        return eligibleOwnAccounts.value.length > 0;
+    }
+
+    return true;
+});
+
+function looksLikeIban(value: string) {
+    const trimmed = value.trim();
+    if (trimmed.length < 8) return false;
+    return /^[A-Za-z]{2}[0-9A-Za-z]+$/.test(trimmed);
+}
+
+async function loadAccounts() {
     if (!auth.currentUser) {
         router.push({ name: "login" });
         return;
-    };
+    }
 
     let page = 0;
     let totalPages = 1;
@@ -44,10 +103,135 @@ onMounted(async () => {
 
         page++;
     }
-});
+}
+
+onMounted(loadAccounts);
 
 function showTransfer(account: AccountDetail) {
     transferState.value = account;
+    transferReceiver.value = "";
+    transferAmountEuros.value = "";
+    transferError.value = "";
+    successMessage.value = "";
+
+    if (account.accountType === "Checking") {
+        if (eligibleOwnAccounts.value.length) {
+            transferMode.value = "ownSavings";
+            transferReceiver.value = String(
+                eligibleOwnAccounts.value[0]?.iban ?? eligibleOwnAccounts.value[0]?.accountNumber,
+            );
+        } else {
+            transferMode.value = "other";
+        }
+    } else {
+        transferMode.value = "ownSavings";
+        if (eligibleOwnAccounts.value.length) {
+            transferReceiver.value = String(
+                eligibleOwnAccounts.value[0]?.iban ?? eligibleOwnAccounts.value[0]?.accountNumber,
+            );
+        }
+    }
+}
+
+function closeTransfer() {
+    transferState.value = null;
+    transferReceiver.value = "";
+    transferAmountEuros.value = "";
+    transferError.value = "";
+}
+
+watch(transferMode, mode => {
+    if (!transferState.value) return;
+    if (mode === "ownSavings" && eligibleOwnAccounts.value.length) {
+        const first = eligibleOwnAccounts.value[0];
+        const firstIdentifier = String(first?.iban ?? first?.accountNumber);
+        if (!eligibleOwnAccounts.value.some(account => String(account.iban ?? account.accountNumber) === transferReceiver.value)) {
+            transferReceiver.value = firstIdentifier;
+        }
+    }
+
+    if (mode === "other") {
+        transferReceiver.value = "";
+    }
+});
+
+async function submitTransfer() {
+    if (!transferState.value) return;
+
+    transferError.value = "";
+    submitting.value = true;
+
+    const amountInCents = Math.round(Number(transferAmountEuros.value) * 100);
+    const to = transferReceiver.value.trim();
+
+    if (!to) {
+        transferError.value = "Please select a receiver.";
+        submitting.value = false;
+        return;
+    }
+
+    if (!amountInCents || amountInCents <= 0) {
+        transferError.value = "Enter a valid transfer amount.";
+        submitting.value = false;
+        return;
+    }
+
+    if (senderIdentifier.value === to) {
+        transferError.value = "Sender and receiver must be different accounts.";
+        submitting.value = false;
+        return;
+    }
+
+    if (transferState.value.accountType === "Savings") {
+        const allowed = eligibleOwnAccounts.value.some(
+            account => String(account.iban ?? account.accountNumber) === to,
+        );
+        if (!allowed) {
+            transferError.value = "Savings accounts can only transfer to your own account.";
+            submitting.value = false;
+            return;
+        }
+    }
+
+    if (transferState.value.accountType === "Checking") {
+        if (transferMode.value === "ownSavings") {
+            const allowed = eligibleOwnAccounts.value.some(
+                account => String(account.iban ?? account.accountNumber) === to,
+            );
+            if (!allowed) {
+                transferError.value = "Checking accounts can only transfer to your savings or other users.";
+                submitting.value = false;
+                return;
+            }
+        }
+
+        if (transferMode.value === "other" && ownAccountIdentifiers.value.has(to)) {
+            transferError.value = "Checking accounts can only transfer to your savings or other users.";
+            submitting.value = false;
+            return;
+        }
+
+        if (transferMode.value === "other" && !looksLikeIban(to)) {
+            transferError.value = "Please enter a valid IBAN for other users.";
+            submitting.value = false;
+            return;
+        }
+    }
+
+    try {
+        await api.transactions.create({
+            from: senderIdentifier.value,
+            to,
+            amountInCents,
+        });
+        closeTransfer();
+        successMessage.value = "Transfer completed successfully.";
+        await loadAccounts();
+    } catch (e) {
+        transferError.value = e instanceof Error ? e.message : "Failed to execute transfer.";
+    } finally {
+        submitting.value = false;
+    }
 }
 
 </script>
@@ -64,19 +248,103 @@ function showTransfer(account: AccountDetail) {
             <a @click="showTransfer(account)" class="transfer-btn">Transfer</a>
         </article>
     </div>
-    <div v-if="transferState">
-        <h2>Transfers</h2>
-        <fieldset>
-            <label>
-                Sender
-                <input disabled="true" name="sender" :value="transferState.iban ?? transferState.accountNumber">
-            </label>
-            <label>
-                Receiver
-                <input name="receiver" placeholder="Search for the Receiver">
-            </label>
-        </fieldset>
-    </div>
+    <dialog :open="transferState !== null">
+        <article v-if="transferState">
+            <header>
+                <button aria-label="Close" rel="prev" @click="closeTransfer"></button>
+                <p><strong>New transfer</strong></p>
+            </header>
+
+            <form @submit.prevent="submitTransfer">
+                <label>
+                    Sender
+                    <input disabled="true" name="sender" :value="transferState.iban ?? transferState.accountNumber">
+                </label>
+
+                <template v-if="transferState.accountType === 'Checking'">
+                    <fieldset class="transfer-destination">
+                        <label>
+                            <input
+                                v-model="transferMode"
+                                type="radio"
+                                value="ownSavings"
+                                :disabled="eligibleOwnAccounts.length === 0"
+                            />
+                            My accounts
+                        </label>
+                        <label>
+                            <input v-model="transferMode" type="radio" value="other" />
+                            Other account
+                        </label>
+                    </fieldset>
+
+                    <label v-if="transferMode === 'ownSavings'">
+                        Receiver
+                        <select v-model="transferReceiver" :disabled="eligibleOwnAccounts.length === 0" required>
+                            <option v-if="eligibleOwnAccounts.length === 0" value="">No savings accounts available</option>
+                            <option
+                                v-for="account in eligibleOwnAccounts"
+                                :key="account.accountId"
+                                :value="String(account.iban ?? account.accountNumber)"
+                            >
+                                {{ account.iban ?? account.accountNumber }}
+                            </option>
+                        </select>
+                    </label>
+
+                    <label v-else>
+                        Receiver (IBAN)
+                        <input
+                            v-model.trim="transferReceiver"
+                            name="receiver"
+                            placeholder="IBAN"
+                            required
+                        />
+                    </label>
+                </template>
+
+                <template v-else>
+                    <label>
+                        Receiver
+                        <select v-model="transferReceiver" :disabled="eligibleOwnAccounts.length === 0" required>
+                            <option v-if="eligibleOwnAccounts.length === 0" value="">No eligible accounts available</option>
+                            <option
+                                v-for="account in eligibleOwnAccounts"
+                                :key="account.accountId"
+                                :value="String(account.iban ?? account.accountNumber)"
+                            >
+                                {{ account.iban ?? account.accountNumber }}
+                            </option>
+                        </select>
+                    </label>
+                </template>
+
+                <label>
+                    Amount (€)
+                    <input v-model.trim="transferAmountEuros" type="number" min="0.01" step="0.01" required />
+                </label>
+
+                <p v-if="transferError" class="error">{{ transferError }}</p>
+
+                <footer>
+                    <button type="submit" :aria-busy="submitting" :disabled="!canSubmitTransfer">
+                        Transfer
+                    </button>
+                </footer>
+            </form>
+        </article>
+    </dialog>
+
+    <dialog :open="successMessage !== ''">
+        <article>
+            <header>
+                <button aria-label="Close" rel="prev" @click="successMessage = ''"></button>
+                <p><strong>Success</strong></p>
+            </header>
+            <p>{{ successMessage }}</p>
+            <button @click="successMessage = ''">OK</button>
+        </article>
+    </dialog>
 </template>
 
 <style scoped>
@@ -84,6 +352,10 @@ fieldset {
     display: flex;
     flex-direction: row;
     gap: 1rem;
+}
+
+.transfer-destination {
+    margin: 0;
 }
 
 .spacer {
