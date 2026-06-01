@@ -6,8 +6,8 @@ import EmployeeTransactions from "@/pages/employee/EmployeeTransactions.vue";
 
 // All the sidebar entries and corresponding components
 const sections = [
+    { key: "approvals", label: "Approve Users", component: EmployeeApprovals },
     { key: "users", label: "View Users", component: EmployeeUsers },
-    { key: "approvals", label: "Approve Customers", component: EmployeeApprovals },
     { key: "transactions", label: "Transactions", component: EmployeeTransactions },
 ] as const;
 
