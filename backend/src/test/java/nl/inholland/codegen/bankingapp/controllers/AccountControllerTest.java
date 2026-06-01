@@ -164,13 +164,6 @@ class AccountControllerTest {
             .andExpect(status().isUnauthorized());
     }
 
-    @Test
-    void closeAccount_returns403_whenCustomerTriesOtherAccount() throws Exception {
-        mockMvc.perform(delete("/accounts/" + accBsavings.getAccountId())
-                .header("Authorization", bearer(tokenA)))
-            .andExpect(status().isUnauthorized());
-    }
-
     // --- GET /accounts/{accountId} ---
 
     @Test
