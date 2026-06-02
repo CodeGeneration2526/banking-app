@@ -11,6 +11,7 @@ import nl.inholland.codegen.bankingapp.models.Account;
 public interface AccountMapper {
     @Mapping(target = "ownerFirstName", source = "owner.firstName")
     @Mapping(target = "ownerLastName", source = "owner.lastName")
+    @Mapping(target = "ownerUserId", source = "owner.userId")
     AccountSummaryResponse toAccountSummaryResponse(Account account);
 
     @Mapping(target = "userId", source = "owner.userId")

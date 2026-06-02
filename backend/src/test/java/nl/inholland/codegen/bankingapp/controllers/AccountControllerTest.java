@@ -25,6 +25,7 @@ import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -48,6 +49,7 @@ class AccountControllerTest {
     private Account accAchecking1;
     private Account accAchecking2;
     private Account accAsavings;
+    private Account accBsavings;
     private String tokenA;
     private String tokenEmployee;
 
@@ -60,6 +62,7 @@ class AccountControllerTest {
         accAchecking1 = persistAccount(1000000001L, Account.AccountType.Checking, customerA, 100_000L);
         accAchecking2 = persistAccount(1000000002L, Account.AccountType.Checking, customerA, 0L);
         accAsavings   = persistAccount(1000000003L, Account.AccountType.Savings, customerA, 50_000L);
+        accBsavings = persistAccount(1000000004L, Account.AccountType.Savings, customerB, 50_000L);
 
         tokenA = jwtUtil.generateToken(customerA.getEmail());
         tokenEmployee = jwtUtil.generateToken(employee.getEmail());
@@ -106,17 +109,20 @@ class AccountControllerTest {
         mockMvc.perform(get("/accounts")
                 .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content").isArray());
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content[0].ownerUserId").exists());
     }
 
     @Test
     void listAllAccounts_filtersByIban() throws Exception {
         mockMvc.perform(get("/accounts")
+                .param("search", "true")
                 .param("iban", accAchecking1.getIban())
                 .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content.length()").value(1))
-            .andExpect(jsonPath("$.content[0].iban").value(accAchecking1.getIban()));
+            .andExpect(jsonPath("$.content[0].iban").value(accAchecking1.getIban()))
+            .andExpect(jsonPath("$.content[0].ownerUserId").value(customerA.getUserId()));
     }
 
     @Test
@@ -126,12 +132,14 @@ class AccountControllerTest {
                 .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content.length()").value(1))
-            .andExpect(jsonPath("$.content[0].accountId").value(accAsavings.getAccountId()));
+            .andExpect(jsonPath("$.content[0].accountId").value(accAsavings.getAccountId()))
+            .andExpect(jsonPath("$.content[0].ownerUserId").value(customerA.getUserId()));
     }
 
     @Test
     void listAllAccounts_filtersByFirstName() throws Exception {
         mockMvc.perform(get("/accounts")
+                .param("search", "true")
                 .param("firstName", "Alice")
                 .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
@@ -142,6 +150,21 @@ class AccountControllerTest {
     void listAllAccounts_returns403_whenNoAuth() throws Exception {
         mockMvc.perform(get("/accounts"))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getAccountInfo_returnsAccount_whenCustomerOwnsAccount() throws Exception {
+        mockMvc.perform(get("/accounts/" + accAchecking1.getAccountId())
+                .header("Authorization", bearer(tokenA)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.accountId").value(accAchecking1.getAccountId()));
+    }
+
+    @Test
+    void getAccountInfo_returns403_whenCustomerTriesOtherAccount() throws Exception {
+        mockMvc.perform(get("/accounts/" + accBsavings.getAccountId())
+                .header("Authorization", bearer(tokenA)))
+            .andExpect(status().isUnauthorized());
     }
 
     // --- GET /accounts/{accountId} ---

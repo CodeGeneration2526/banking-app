@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { api } from '@/api';
+import { api, ApiError } from '@/api';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 import { ref } from 'vue';
@@ -12,10 +12,17 @@ const loading = ref(false);
 const auth = useAuthStore();
 const router = useRouter();
 
-if (auth.isAuthenticated) {
-    console.log("User is already authenticated");
-    // TODO: redirect to the Users page when that is implemented
+function redirectUser() {
+    if (auth.isEmployee) {
+        router.push({ name: "employee" });
+    } else if (auth.currentUser?.role === "Customer" && !auth.currentUser?.approvedBy) {
+        router.push({ name: "home" });
+    } else {
+        router.push({ name: "accounts" });
+    }
 }
+
+if (auth.isAuthenticated) redirectUser();
 
 async function handleLogin() {
     error.value = "";
@@ -31,11 +38,15 @@ async function handleLogin() {
         // If a token is set but the api calls fail it's set to null atm, could be worth fixing or checking later
         auth.setCurrentUser(await api.users.me());
 
-        if (auth.isEmployee) router.push({ name: "employee" });
-    //     TODO: handle user login
+        redirectUser();
     } catch (e) {
-        console.error(e);
-        error.value = JSON.stringify(e);
+        if (e instanceof ApiError) {
+            error.value = e.message;
+            console.error(e.message);
+        } else {
+            error.value = "Something went wrong...";
+            throw e; // hailmary? the error likely originated from vue router then
+        }
     } finally {
         loading.value = false;
     }
@@ -59,6 +70,9 @@ async function handleLogin() {
         <p v-if="error">{{error}}</p>
 
         <input type="submit" value="Login" :disabled="loading" />
+        <p class="register-link">
+            New here? <RouterLink to="/register">Create an account</RouterLink>
+        </p>
     </form>
 </template>
 
@@ -66,5 +80,9 @@ async function handleLogin() {
 form {
     max-width: 32rem;
     margin: 0 auto;
+}
+
+.register-link {
+    margin-top: 0.75rem;
 }
 </style>

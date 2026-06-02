@@ -18,5 +18,8 @@ public record AccountSummaryResponse(
     String ownerLastName,
 
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    long ownerUserId,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     String accountType
 ) {}
