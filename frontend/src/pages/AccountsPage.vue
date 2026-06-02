@@ -95,12 +95,6 @@ const canSubmitTransfer = computed(() => {
     return true;
 });
 
-function looksLikeIban(value: string) {
-    const trimmed = value.trim();
-    if (trimmed.length < 8) return false;
-    return /^[A-Za-z]{2}[0-9A-Za-z]+$/.test(trimmed);
-}
-
 async function loadAccounts() {
     if (!auth.currentUser) {
         router.push({ name: "login" });
@@ -324,58 +318,10 @@ async function submitTransfer() {
     const amountInCents = Math.round(Number(transferAmountEuros.value) * 100);
     const to = transferReceiver.value.trim();
 
-    if (!to) {
-        transferError.value = "Please select a receiver.";
-        submitting.value = false;
-        return;
-    }
-
-    if (!amountInCents || amountInCents <= 0) {
-        transferError.value = "Enter a valid transfer amount.";
-        submitting.value = false;
-        return;
-    }
-
     if (senderIdentifier.value === to) {
         transferError.value = "Sender and receiver must be different accounts.";
         submitting.value = false;
         return;
-    }
-
-    if (transferState.value.accountType === "Savings") {
-        const allowed = eligibleOwnAccounts.value.some(
-            account => String(account.iban ?? account.accountNumber) === to,
-        );
-        if (!allowed) {
-            transferError.value = "Savings accounts can only transfer to your own account.";
-            submitting.value = false;
-            return;
-        }
-    }
-
-    if (transferState.value.accountType === "Checking") {
-        if (transferMode.value === "ownSavings") {
-            const allowed = eligibleOwnAccounts.value.some(
-                account => String(account.iban ?? account.accountNumber) === to,
-            );
-            if (!allowed) {
-                transferError.value = "Checking accounts can only transfer to your savings or other users.";
-                submitting.value = false;
-                return;
-            }
-        }
-
-        if (transferMode.value === "other" && ownAccountIdentifiers.value.has(to)) {
-            transferError.value = "Checking accounts can only transfer to your savings or other users.";
-            submitting.value = false;
-            return;
-        }
-
-        if (transferMode.value === "other" && !looksLikeIban(to)) {
-            transferError.value = "Please enter a valid IBAN for other users.";
-            submitting.value = false;
-            return;
-        }
     }
 
     try {
