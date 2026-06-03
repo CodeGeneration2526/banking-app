@@ -49,7 +49,7 @@ public class TransactionController {
     @Operation(summary = "Execute a transaction",
                description = "Transfers funds between two accounts. The from/to fields accept either an IBAN or a numeric account number.")
     public ResponseEntity<TransactionResponse> executeTransaction(@Valid @RequestBody TransactionRequest request) {
-        User initiator = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User initiator = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
 
         long fromAccountNumber = ibanUtil.resolveAccountNumber(request.from());
         long toAccountNumber = ibanUtil.resolveAccountNumber(request.to());
@@ -73,7 +73,7 @@ public class TransactionController {
             @RequestParam(required = false) Long amountInCents,
             @RequestParam(defaultValue = "EqualTo") TransactionSpecifications.AmountFilter amountFilter,
             @ParameterObject @PageableDefault(size = 10, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable) {
-        User authUser = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User authUser = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
 
         Long accountNumber = (account == null || account.isBlank()) ? null : ibanUtil.resolveAccountNumber(account);
         TransactionFilter filter = new TransactionFilter(dateFrom, dateTo, accountNumber, amountInCents, amountFilter);

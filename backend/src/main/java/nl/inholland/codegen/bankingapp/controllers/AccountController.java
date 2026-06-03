@@ -1,7 +1,6 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
@@ -101,8 +100,9 @@ public class AccountController {
     @Operation(summary = "Approve customer and create accounts", description = "Approves the given pending customer and creates one checking and one savings account.")
     @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<ApiResponse> createAccount(@Valid @RequestBody NewAccountRequest request) {
-        User issuer = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
-        User accountUser = userService.getUser(request.userId()).orElseThrow(() -> new BadRequestException("userId is invalid"));
+        User issuer = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
+        User accountUser = userService.getUser(request.userId())
+            .orElseThrow(() -> new BadRequestException("User ID does not exist"));
 
         accountService.approveAndCreateAccounts(
             accountUser, issuer, request.absoluteLimitInCents(), request.dailyLimitInCents());

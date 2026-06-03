@@ -14,7 +14,7 @@ const router = createRouter({
         { path: "/login", name: "login", component: LoginPage },
         { path: "/register", name: "register", component: RegisterPage },
         { path: "/employee", name: "employee", component: EmployeeDashboard, meta: { requiresEmployee: true } },
-        { path: "/accounts", name: "accounts", component: AccountsPage },
+        { path: "/accounts", name: "accounts", component: AccountsPage, meta: { blockedForEmployee: true } },
 
         // 404 catch all route
         { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundPage },
@@ -23,9 +23,11 @@ const router = createRouter({
 
 // Guard for employee only routes, profile is refreshed at startup (see: main.ts)
 router.beforeEach((to) => {
+    const auth = useAuthStore();
+    if (to.meta.blockedForEmployee && auth.isAuthenticated && auth.isEmployee) return { name: "employee" };
     if (!to.meta.requiresEmployee) return true;
-    if (!useAuthStore().isAuthenticated) return { name: "login" };
-    return useAuthStore().isEmployee ? true : { name: "home" };
+    if (!auth.isAuthenticated) return { name: "login" };
+    return auth.isEmployee ? true : { name: "home" };
 });
 
 export default router;

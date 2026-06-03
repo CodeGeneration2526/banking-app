@@ -11,7 +11,6 @@ import nl.inholland.codegen.bankingapp.utils.GetAuthUser;
 import jakarta.validation.Valid;
 
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
@@ -71,7 +70,7 @@ public class UserController {
     @GetMapping("me")
     @Operation(summary = "Get one user", description = "Returns info on the logged in user.")
     public ResponseEntity<UserResponse> getSelfUser() {
-        User authUser = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User authUser = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
 
         // this will likely be the same as authUser, but it could very well not be in some cases
         User user = userService.getUser(authUser.getUserId())
@@ -87,7 +86,7 @@ public class UserController {
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable long userId,
             @Valid @RequestBody UserPatchRequest request) {
-        User authUser = getAuthUser.getAuthUser().orElseThrow(() -> new AuthenticationException());
+        User authUser = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
 
         if (authUser.getRole() != User.Role.Employee && authUser.getUserId() != userId) {
             throw new AuthorizationDeniedException("Not authorized to update this user");

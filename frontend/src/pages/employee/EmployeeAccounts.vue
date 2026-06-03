@@ -15,6 +15,7 @@ const totalPages = ref(0);
 const firstName = ref("");
 const lastName = ref("");
 const iban = ref("");
+const ownerUserId = ref("");
 
 async function loadAccounts() {
   loading.value = true;
@@ -26,6 +27,7 @@ async function loadAccounts() {
       firstName: firstName.value,
       lastName: lastName.value,
       iban: iban.value,
+      ownerUserId: ownerUserId.value ? Number(ownerUserId.value) : undefined,
     });
     accounts.value = result.content ?? [];
     totalPages.value = result.page?.totalPages ?? 0;
@@ -56,10 +58,11 @@ function resetFilters() {
   firstName.value = "";
   lastName.value = "";
   iban.value = "";
+  ownerUserId.value = "";
   search();
 }
 
-const hasFilters = () => !!(firstName.value || lastName.value || iban.value);
+const hasFilters = () => !!(firstName.value || lastName.value || iban.value || ownerUserId.value);
 
 onMounted(loadAccounts);
 
@@ -147,6 +150,7 @@ async function toggleClosed() {
     <input v-model.trim="firstName" type="text" placeholder="First name" />
     <input v-model.trim="lastName" type="text" placeholder="Last name" />
     <input v-model.trim="iban" type="text" placeholder="IBAN or account number" />
+    <input v-model.trim="ownerUserId" type="number" placeholder="Owner user ID" min="1" />
     <button type="submit">Search</button>
     <button type="button" class="secondary" :disabled="!hasFilters()" @click="resetFilters">
       Reset
@@ -161,7 +165,7 @@ async function toggleClosed() {
     <table v-else>
       <thead>
         <tr>
-          <th scope="col">Owner</th>
+          <th scope="col">Owner (ID)</th>
           <th scope="col">IBAN / Account Number</th>
           <th scope="col">Type</th>
           <th scope="col">Manage</th>
@@ -169,7 +173,7 @@ async function toggleClosed() {
       </thead>
       <tbody>
         <tr v-for="account in accounts" :key="account.accountId">
-          <td>{{ account.ownerFirstName }} {{ account.ownerLastName }}</td>
+          <td>{{ account.ownerFirstName }} {{ account.ownerLastName }} ({{account.ownerUserId }})</td>
           <td>{{ account.iban ?? account.accountNumber }}</td>
           <td>{{ account.accountType }}</td>
           <td>

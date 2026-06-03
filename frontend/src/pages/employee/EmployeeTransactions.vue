@@ -290,7 +290,7 @@ td small {
 }
 
 .amount-filter input {
-  min-width: 4rem;
+  min-width: 6rem;
 }
 
 .search button {
