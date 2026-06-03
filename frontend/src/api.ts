@@ -51,7 +51,7 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
             router.push({ name: "login" });
         }
 
-        throw new Error(message);
+        throw new ApiError(response.status, message);
     }
 
     return response.json();
