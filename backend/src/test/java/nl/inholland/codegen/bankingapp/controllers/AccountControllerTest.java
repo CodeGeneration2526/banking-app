@@ -282,7 +282,7 @@ class AccountControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("userId is invalid"));
+            .andExpect(jsonPath("$.message").value("User ID does not exist"));
     }
 
     @Test
