@@ -9,12 +9,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import nl.inholland.codegen.bankingapp.dtos.TransactionRequest;
+import nl.inholland.codegen.bankingapp.dtos.TransactionFilter;
 import nl.inholland.codegen.bankingapp.exceptions.BadRequestException;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.Account;
 import nl.inholland.codegen.bankingapp.models.Transaction;
 import nl.inholland.codegen.bankingapp.models.User;
+import nl.inholland.codegen.bankingapp.policies.TransactionExecutePolicy;
 import nl.inholland.codegen.bankingapp.repositories.AccountRepository;
 import nl.inholland.codegen.bankingapp.repositories.TransactionRepository;
 
@@ -23,92 +24,64 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+    private final TransactionExecutePolicy transactionExecutePolicy;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository) {
+    public TransactionService(TransactionRepository transactionRepository,
+                              AccountRepository accountRepository,
+                              TransactionExecutePolicy transactionExecutePolicy) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
+        this.transactionExecutePolicy = transactionExecutePolicy;
     }
 
     @Transactional
-    public Transaction executeTransaction(TransactionRequest req, User initiator) {
-        //TODO: Migrate error checking to make use of policies after PR merge
-        Account sender = accountRepository.findByIban(req.fromIban())
+    public Transaction executeTransaction(long fromAccountNumber, long toAccountNumber, long amountInCents, User initiator) {
+        Account sender = accountRepository.findByAccountNumber(fromAccountNumber)
             .orElseThrow(() -> new NotFoundException("From account not found"));
-        Account receiver = accountRepository.findByIban(req.toIban())
+        Account receiver = accountRepository.findByAccountNumber(toAccountNumber)
             .orElseThrow(() -> new NotFoundException("To account not found"));
 
-        if (Boolean.TRUE.equals(sender.getClosed()) || Boolean.TRUE.equals(receiver.getClosed())) {
-            throw new BadRequestException("Account is closed");
-        }
+        transactionExecutePolicy.enforceTransactionExecutePolicy(sender, receiver, amountInCents, initiator);
+        //Daily limit check outside of policy due to DB call
+        dailyLimitCheck(sender, amountInCents);
 
-        validateTransfer(initiator, sender, receiver);
-
-        if (sender.getStoredAmountInCents() - req.amountInCents() < sender.getAbsoluteLimitInCents()) {
-            throw new BadRequestException("Transfer would drop balance below absolute limit");
-        }
-
-        dailyLimitCheck(sender, req.amountInCents());
-
-        sender.setStoredAmountInCents(sender.getStoredAmountInCents() - req.amountInCents());
-        receiver.setStoredAmountInCents(receiver.getStoredAmountInCents() + req.amountInCents());
+        sender.setStoredAmountInCents(sender.getStoredAmountInCents() - amountInCents);
+        receiver.setStoredAmountInCents(receiver.getStoredAmountInCents() + amountInCents);
 
         Transaction t = new Transaction();
         t.setSenderAccount(sender);
         t.setReceiverAccount(receiver);
-        t.setAmountInCents(req.amountInCents());
+        t.setAmountInCents(amountInCents);
         t.setTimestamp(LocalDateTime.now());
         t.setInitiatedBy(initiator);
         return transactionRepository.save(t);
     }
 
-    public Page<Transaction> getTransactions(User authUser, Long userIdFilter, LocalDate dateFrom, LocalDate dateTo, String iban, Pageable pageable) {
+    public Page<Transaction> getTransactions(User authUser, Long userId, TransactionFilter filter, Pageable pageable) {
         boolean isEmployee = authUser.getRole() == User.Role.Employee;
 
-        Specification<Transaction> scope = null;
+        Specification<Transaction> spec = filter.toSpecification();
         if (!isEmployee) {
-            scope = TransactionSpecifications.ownerIs(authUser.getUserId());
-        } else if (userIdFilter != null) {
-            scope = TransactionSpecifications.ownerIs(userIdFilter);
+            spec = TransactionSpecifications.ownerIs(authUser.getUserId()).and(spec);
+        } else if (userId != null) {
+            spec = TransactionSpecifications.ownerIs(userId).and(spec);
         }
-
-        Specification<Transaction> spec = Specification.where(scope);
-        if (dateFrom != null) spec = spec.and(TransactionSpecifications.timestampOnOrAfter(dateFrom.atStartOfDay()));
-        if (dateTo   != null) spec = spec.and(TransactionSpecifications.timestampBefore(dateTo.plusDays(1).atStartOfDay()));
-        if (iban != null && !iban.isBlank()) spec = spec.and(TransactionSpecifications.involvesIban(iban));
-
         return transactionRepository.findAll(spec, pageable);
     }
 
     private void dailyLimitCheck(Account sender, long amountInCents) {
-        //Grab the beginning of the day and the end of tomorrow and get all transactions from this period
+        //Grab the beginning of the day and the end of the day and get all transactions from this period
         //Compare this amount to the daily limit and throw an error when exceeding.
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
 
         long usedToday = transactionRepository
-            .findBySenderAccount_AccountIdAndTimestampBetween(sender.getAccountId(), startOfDay, startOfNextDay)
+            .findBySenderAccount_AccountIdAndTimestampAfterAndTimestampBefore(sender.getAccountId(), startOfDay, startOfNextDay)
             .stream().mapToLong(Transaction::getAmountInCents).sum();
 
         if (usedToday + amountInCents > sender.getDailyLimitInCents()) {
             throw new BadRequestException("Daily transfer limit exceeded");
-        }
-    }
-
-    private void validateTransfer(User initiator, Account sender, Account receiver) {
-        //Ignore validations if the user is an employee
-        if (initiator.getRole() == User.Role.Employee) {
-            return;
-        }
-
-        long initiatorId = initiator.getUserId();
-        if (sender.getOwner().getUserId() != initiatorId) {
-            throw new BadRequestException("You can only transfer from your own account");
-        }
-
-        if ((sender.getAccountType() == Account.AccountType.Savings || receiver.getAccountType() == Account.AccountType.Savings)
-            && receiver.getOwner().getUserId() != initiatorId) {
-            throw new BadRequestException("Savings transfers must stay between your own accounts");
         }
     }
 }

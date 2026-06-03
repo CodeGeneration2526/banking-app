@@ -1,12 +1,10 @@
 package nl.inholland.codegen.bankingapp.services;
 
 import nl.inholland.codegen.bankingapp.dtos.*;
-import nl.inholland.codegen.bankingapp.dtos.AccountCreationRequest;
 import nl.inholland.codegen.bankingapp.dtos.UserPatchRequest;
 import nl.inholland.codegen.bankingapp.exceptions.*;
 import nl.inholland.codegen.bankingapp.exceptions.NotFoundException;
 import nl.inholland.codegen.bankingapp.models.User;
-import nl.inholland.codegen.bankingapp.policies.ApproveUsersPolicy;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 
@@ -24,17 +22,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final ApproveUsersPolicy approveUsersPolicy;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil,
-            ApproveUsersPolicy approveUsersPolicy) {
+            JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
 		this.jwtUtil = jwtUtil;
-		this.approveUsersPolicy = approveUsersPolicy;
     }
 
     /**
@@ -65,19 +60,27 @@ public class UserService {
     }
 
 
-    public Page<User> getAllApprovedUsers(Pageable pageable) {
-        return getAllUsers(true, pageable);
+    public Page<User> getAllUsers(Boolean isApproved, User.Role role, Pageable pageable) {
+        // If it's null, return all users regardless of approval status
+        if (isApproved == null) return userRepository.findByRole(role, pageable);
+        if (isApproved) {
+            // If it's true return all approved users
+            return userRepository.findByRoleAndApprovedByIsNotNull(role, pageable);
+        } else {
+            // If it's false return all users waiting to be approved
+            return userRepository.findByRoleAndApprovedByIsNull(role, pageable);
+        }
     }
 
     public Page<User> getAllUsers(Boolean isApproved, Pageable pageable) {
         // If it's null, return all users regardless of approval status
-        if (isApproved == null) return userRepository.findByRole(User.Role.Customer, pageable);
+        if (isApproved == null) return userRepository.findAll(pageable);
         if (isApproved) {
             // If it's true return all approved users
-            return userRepository.findByRoleAndApprovedByIsNotNull(User.Role.Customer, pageable);
+            return userRepository.findByApprovedByIsNotNull(pageable);
         } else {
             // If it's false return all users waiting to be approved
-            return userRepository.findByRoleAndApprovedByIsNull(User.Role.Customer, pageable);
+            return userRepository.findByApprovedByIsNull(pageable);
         }
     }
 
@@ -85,39 +88,25 @@ public class UserService {
         return userRepository.findById(userId);
     }
 
-    // NOTE: it might be better to name this "approveUser" as it is the main thing it does
-    public User createAccounts(AccountCreationRequest request, User approver)
+    public User updateUser(long userId, UserPatchRequest request)
             throws NotFoundException, BadRequestException {
-        User user = getUser(request.userId()).orElseThrow(() -> new NotFoundException("User not found"));
-
-        approveUsersPolicy.enforceApproveUsersPolicy(user, approver);
-
-        user.setApprovedBy(approver);
-        // TODO: create checking + savings accounts after transaction stuff is implemented
-        return userRepository.save(user);
-    }
-
-    public User updateUser(UserPatchRequest request)
-            throws NotFoundException, BadRequestException {
-        User user = getUser(request.userId())
-            .orElseThrow(() -> new NotFoundException("User not found"));
-
-        if (user.isClosed()) {
-            throw new BadRequestException("Cannot update a closed account");
-        }
-
-        //Not sure whether or not to still use JSON Patch. The code is minimal. Maybe if we add more to patch request?
-        if (request.firstName() != null) user.setFirstName(request.firstName());
-        if (request.lastName() != null) user.setLastName(request.lastName());
-        return userRepository.save(user);
-    }
-
-    public void deleteUser(long userId) throws NotFoundException {
         User user = getUser(userId)
             .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if (user.isClosed()) return;
-        user.setClosed(true);
-        userRepository.save(user);
+        boolean reopening = Boolean.FALSE.equals(request.closed());
+        if (user.isClosed() && !reopening) {
+            throw new BadRequestException("Cannot update a closed account");
+        }
+
+        if (request.firstName() != null) user.setFirstName(request.firstName());
+        if (request.lastName() != null) user.setLastName(request.lastName());
+        if (request.email() != null) user.setEmail(request.email());
+        if (request.closed() != null) user.setClosed(request.closed());
+
+        try {
+            return userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException("Email is already in use");
+        }
     }
 }

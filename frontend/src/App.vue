@@ -1,11 +1,47 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+
+const auth = useAuthStore();
+const router = useRouter();
+
+function handleLogout() {
+    auth.clearToken();
+    router.push({ name: "login" });
+}
+
+</script>
 
 <template>
-    <h1>You did it!</h1>
-    <p>
-        Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-        documentation
-    </p>
+    <header>
+        <nav>
+            <ul>
+                <li><strong>Bank</strong></li>
+            </ul>
+            <ul>
+                <li><RouterLink to="/" class="contrast">Home</RouterLink></li>
+                <li v-if="auth.isEmployee"><RouterLink to="/employee" class="contrast">Employee Dashboard</RouterLink></li>
+                <li v-if="auth.isAuthenticated && auth.currentUser?.approvedBy && !auth.isEmployee">
+                    <RouterLink to="/accounts" class="contrast">Accounts</RouterLink>
+                </li>
+                <li v-if="auth.isAuthenticated"><a @click.prevent="handleLogout" style="cursor:pointer" class="contrast">Logout</a></li>
+                <li v-if="!auth.isAuthenticated"><RouterLink to="/login" class="contrast">Login</RouterLink></li>
+                <li v-if="!auth.isAuthenticated"><RouterLink to="/register" class="contrast">Register</RouterLink></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <RouterView />
+    </main>
+    <footer>
+        <small>&#169; Jonathan Mauricio<br></small>
+        <small>&#169; Kunal Dandekar<br></small>
+        <small>Licensed under the GNU <a class="secondary" target="_blank" href="https://www.gnu.org/licenses/agpl-3.0.en.html">AGPL-3.0-or-later</a> license</small>
+    </footer>
 </template>
 
-<style scoped></style>
+<style scoped>
+header, main, footer {
+    padding: 1.5rem 2rem;
+}
+</style>

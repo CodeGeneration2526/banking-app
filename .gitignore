@@ -7,6 +7,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .claude
+### Tooling Tests ###
+graphify-out/
+claude.md
 
 ### STS ###
 .apt_generated

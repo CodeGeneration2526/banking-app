@@ -1,4 +1,9 @@
 package nl.inholland.codegen.bankingapp.dtos;
 
-public record LoginResponse(String token) {
-}
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record LoginResponse (
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    String token
+) {}

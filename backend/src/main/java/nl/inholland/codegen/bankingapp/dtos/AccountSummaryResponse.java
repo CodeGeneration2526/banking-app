@@ -1,7 +1,25 @@
 package nl.inholland.codegen.bankingapp.dtos;
 
-public record AccountSummaryResponse (
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record AccountSummaryResponse(
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     long accountId,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    long accountNumber,
+
     String iban,
-    String accountType)
-{}
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    String ownerFirstName,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    String ownerLastName,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    long ownerUserId,
+
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    String accountType
+) {}

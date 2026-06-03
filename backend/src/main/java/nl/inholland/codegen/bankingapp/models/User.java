@@ -63,7 +63,7 @@ public class User implements UserDetails {
 
 		@Override
 		public String getAuthority() {
-            return name();
+            return "ROLE_" + name();
 		}
     }
 
