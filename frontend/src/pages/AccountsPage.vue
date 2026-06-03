@@ -18,6 +18,7 @@ const transferError = ref("");
 const successMessage = ref("");
 
 const accounts = ref<AccountDetail[]>([]);
+const totalBalance = computed(() => accounts.value.reduce((sum, a) => sum + a.storedAmountInCents, 0));
 
 const showUserSearch = ref(false);
 const searchFirstName = ref("");
@@ -345,6 +346,7 @@ async function submitTransfer() {
 
 <template>
     <h1>Welcome back, {{ auth.currentUser?.firstName }}!</h1>
+    <h2>Accounts (Total: {{ formatCents(totalBalance) }})</h2>
     <div v-if="!accounts.length">No Accounts</div>
     <div v-if="accounts.length" class="accounts-grid">
         <article v-for="account in accounts" :key="account.accountId" class="account-card">
@@ -613,6 +615,14 @@ async function submitTransfer() {
             </nav>
         </article>
     </dialog>
+
+    <h2>User info</h2>
+    First Name: {{ auth.currentUser?.firstName }} <br>
+    Last Name: {{ auth.currentUser?.lastName }} <br>
+    Email: {{ auth.currentUser?.email }} <br>
+    Phone Number: {{ auth.currentUser?.phoneNumber }} <br>
+    BSN: {{ auth.currentUser?.bsn }} <br>
+
 
     <dialog :open="successMessage !== ''" class="chonky">
         <article>
