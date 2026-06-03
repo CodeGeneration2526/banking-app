@@ -60,6 +60,7 @@ public class UserController {
 
     @GetMapping("{userId}")
     @Operation(summary = "Get one user", description = "Returns just one user from the given ID.")
+    @PreAuthorize("hasRole('Employee')")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long userId) {
         UserResponse userResponse = userService.getUser(userId)
             .map(userMapper::toUserResponse)
