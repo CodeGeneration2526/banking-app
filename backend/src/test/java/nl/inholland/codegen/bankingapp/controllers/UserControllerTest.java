@@ -138,7 +138,7 @@ class UserControllerTest {
     @Test
     void getUser_returnsUser_whenExists() throws Exception {
         mockMvc.perform(get("/users/" + customerA.getUserId())
-                .header("Authorization", bearer(tokenCustomerA)))
+                .header("Authorization", bearer(tokenEmployee)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("alice@example.com"));
     }
