@@ -48,7 +48,7 @@ public class AccountService {
         Pageable pageable
     ) {
         Specification<Account> spec = Specification.where(AccountSpecifications.forEmployee());
-        addFiltersToSpec(spec, firstName, lastName, iban, accountType, ownerUserId);
+        spec = addFiltersToSpec(spec, firstName, lastName, iban, accountType, ownerUserId);
 
         return accountRepository.findAll(spec, pageable);
     }
