@@ -1,5 +1,6 @@
 package nl.inholland.codegen.bankingapp.controllers;
 
+import nl.inholland.codegen.bankingapp.specifications.AccountSpecifications;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;

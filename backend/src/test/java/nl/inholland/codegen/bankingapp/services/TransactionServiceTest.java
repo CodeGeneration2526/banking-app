@@ -194,7 +194,7 @@ class TransactionServiceTest {
         Page<Transaction> page = new PageImpl<>(List.of());
         when(transactionRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-        Page<Transaction> result = transactionService.getTransactions(customer, 999L, filter, pageable);
+        Page<Transaction> result = transactionService.getTransactions(customer, filter, pageable);
 
         assertSame(page, result);
         verify(transactionRepository).findAll(any(Specification.class), eq(pageable));
@@ -207,7 +207,7 @@ class TransactionServiceTest {
         Page<Transaction> page = new PageImpl<>(List.of());
         when(transactionRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-        Page<Transaction> result = transactionService.getTransactions(employee, null, filter, pageable);
+        Page<Transaction> result = transactionService.getTransactions((Long) null, filter, pageable);
 
         assertSame(page, result);
         ArgumentCaptor<Specification<Transaction>> specCaptor = ArgumentCaptor.forClass(Specification.class);
@@ -222,7 +222,7 @@ class TransactionServiceTest {
         Page<Transaction> page = new PageImpl<>(List.of());
         when(transactionRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-        Page<Transaction> result = transactionService.getTransactions(employee, 42L, filter, pageable);
+        Page<Transaction> result = transactionService.getTransactions(42L, filter, pageable);
 
         assertSame(page, result);
         verify(transactionRepository).findAll(any(Specification.class), eq(pageable));
