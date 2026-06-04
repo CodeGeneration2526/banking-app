@@ -1,4 +1,4 @@
-package nl.inholland.codegen.bankingapp.services;
+package nl.inholland.codegen.bankingapp.specifications;
 
 import org.springframework.data.jpa.domain.Specification;
 

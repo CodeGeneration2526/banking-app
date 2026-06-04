@@ -2,7 +2,9 @@ package nl.inholland.codegen.bankingapp.services;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
+import nl.inholland.codegen.bankingapp.specifications.TransactionSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -57,15 +59,19 @@ public class TransactionService {
         return transactionRepository.save(t);
     }
 
-    public Page<Transaction> getTransactions(User authUser, Long userId, TransactionFilter filter, Pageable pageable) {
-        boolean isEmployee = authUser.getRole() == User.Role.Employee;
-
+    public Page<Transaction> getTransactions(Long userId, TransactionFilter filter, Pageable pageable) {
         Specification<Transaction> spec = filter.toSpecification();
-        if (!isEmployee) {
-            spec = TransactionSpecifications.ownerIs(authUser.getUserId()).and(spec);
-        } else if (userId != null) {
+        if(userId != null) {
             spec = TransactionSpecifications.ownerIs(userId).and(spec);
         }
+
+        return transactionRepository.findAll(spec, pageable);
+    }
+
+    public Page<Transaction> getTransactions(User authUser, TransactionFilter filter, Pageable pageable) {
+        Specification<Transaction> spec = filter.toSpecification();
+        spec = TransactionSpecifications.ownerIs(authUser.getUserId()).and(spec);
+
         return transactionRepository.findAll(spec, pageable);
     }
 

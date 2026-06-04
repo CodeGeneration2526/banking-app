@@ -25,7 +25,7 @@ import nl.inholland.codegen.bankingapp.mappers.TransactionMapper;
 import nl.inholland.codegen.bankingapp.models.Transaction;
 import nl.inholland.codegen.bankingapp.models.User;
 import nl.inholland.codegen.bankingapp.services.TransactionService;
-import nl.inholland.codegen.bankingapp.services.TransactionSpecifications;
+import nl.inholland.codegen.bankingapp.specifications.TransactionSpecifications;
 import nl.inholland.codegen.bankingapp.utils.IbanUtil;
 
 @RestController
@@ -78,9 +78,16 @@ public class TransactionController {
         Long accountNumber = (account == null || account.isBlank()) ? null : ibanUtil.resolveAccountNumber(account);
         TransactionFilter filter = new TransactionFilter(dateFrom, dateTo, accountNumber, amountInCents, amountFilter);
 
-        Page<TransactionResponse> response = transactionService
-            .getTransactions(authUser, userId, filter, pageable)
-            .map(transactionMapper::toTransactionResponse);
+        Page<TransactionResponse> response;
+        if (authUser.getRole() == User.Role.Employee) {
+              response = transactionService
+                    .getTransactions(userId, filter, pageable)
+                    .map(transactionMapper::toTransactionResponse);
+        } else {
+            response = transactionService
+                .getTransactions(authUser, filter, pageable)
+                .map(transactionMapper::toTransactionResponse);
+        }
 
         return ResponseEntity.ok(new PagedModel<>(response));
     }
