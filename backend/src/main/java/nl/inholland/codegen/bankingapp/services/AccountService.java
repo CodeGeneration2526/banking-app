@@ -15,6 +15,7 @@ import nl.inholland.codegen.bankingapp.policies.AccountCreatePolicy;
 import nl.inholland.codegen.bankingapp.policies.ApproveUsersPolicy;
 import nl.inholland.codegen.bankingapp.repositories.AccountRepository;
 import nl.inholland.codegen.bankingapp.repositories.UserRepository;
+import nl.inholland.codegen.bankingapp.specifications.AccountSpecifications;
 import nl.inholland.codegen.bankingapp.utils.IbanUtil;
 
 @Service
@@ -65,7 +66,7 @@ public class AccountService {
         Pageable pageable
     ) {
         Specification<Account> spec = Specification.where(AccountSpecifications.forUserWithId(callingUserId));
-        addFiltersToSpec(spec, firstName, lastName, iban, accountType, ownerUserId);
+        spec = addFiltersToSpec(spec, firstName, lastName, iban, accountType, ownerUserId);
 
         return accountRepository.findAll(spec, pageable);
     }
