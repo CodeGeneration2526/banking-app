@@ -39,6 +39,37 @@ public class AccountService {
 		this.ibanUtil = ibanUtil;
     }
 
+    public Page<Account> getAllAccounts(
+        String firstName,
+        String lastName,
+        String iban,
+        Account.AccountType accountType,
+        Long ownerUserId,
+        Pageable pageable
+    ) {
+        Specification<Account> spec = Specification.where(AccountSpecifications.forEmployee());
+        addFiltersToSpec(spec, firstName, lastName, iban, accountType, ownerUserId);
+
+        return accountRepository.findAll(spec, pageable);
+    }
+
+    /// These accounts are searchable by any non employee user of the bank
+    /// so these are other checking accounts, and the calling user's own accounts
+    public Page<Account> getAllVisibleAccounts(
+        Long callingUserId,
+        String firstName,
+        String lastName,
+        String iban,
+        Account.AccountType accountType,
+        Long ownerUserId,
+        Pageable pageable
+    ) {
+        Specification<Account> spec = Specification.where(AccountSpecifications.forUserWithId(callingUserId));
+        addFiltersToSpec(spec, firstName, lastName, iban, accountType, ownerUserId);
+
+        return accountRepository.findAll(spec, pageable);
+    }
+
     public Page<Account> getAllAccounts(Specification<Account> spec, Pageable pageable) {
         return accountRepository.findAll(spec, pageable);
     }
@@ -99,5 +130,23 @@ public class AccountService {
         if (request.closed() != null) account.setClosed(request.closed());
 
         return accountRepository.save(account);
+    }
+
+    private Specification<Account> addFiltersToSpec(
+        Specification<Account> spec,
+        String firstName,
+        String lastName,
+        String iban,
+        Account.AccountType accountType,
+        Long ownerUserId
+    ) {
+        spec = spec
+            .and(AccountSpecifications.firstNameContains(firstName))
+            .and(AccountSpecifications.lastNameContains(lastName))
+            .and(AccountSpecifications.ibanOrAccountNumberEquals(iban))
+            .and(AccountSpecifications.accountTypeEquals(accountType))
+            .and(AccountSpecifications.ownerUserId(ownerUserId));
+
+        return spec;
     }
 }

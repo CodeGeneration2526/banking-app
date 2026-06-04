@@ -2,7 +2,6 @@ package nl.inholland.codegen.bankingapp.controllers;
 
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.*;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.Valid;
-
 import nl.inholland.codegen.bankingapp.dtos.*;
 import nl.inholland.codegen.bankingapp.exceptions.*;
 import nl.inholland.codegen.bankingapp.models.*;
@@ -59,15 +57,15 @@ public class AccountController {
     {
         User user = getAuthUser.getAuthUser().orElseThrow(AuthenticationException::new);
 
-        Specification<Account> spec = Specification
-            .where(AccountSpecifications.visibleTo(user))
-            .and(AccountSpecifications.firstNameContains(firstName))
-            .and(AccountSpecifications.lastNameContains(lastName))
-            .and(AccountSpecifications.ibanOrAccountNumberEquals(iban))
-            .and(AccountSpecifications.accountTypeEquals(accountType))
-            .and(AccountSpecifications.ownerUserId(ownerUserId));
-
-        Page<AccountSummaryResponse> resp = accountService.getAllAccounts(spec, pageable).map(accountMapper::toAccountSummaryResponse);
+        Page<AccountSummaryResponse> resp;
+        if (user.getRole() == User.Role.Employee) {
+            resp = accountService.getAllAccounts(firstName, lastName, iban, accountType, ownerUserId, pageable)
+                                 .map(accountMapper::toAccountSummaryResponse);
+        } else {
+            resp = accountService.getAllVisibleAccounts(user.getUserId(), firstName, lastName, iban, accountType, ownerUserId, pageable)
+                                 .map(accountMapper::toAccountSummaryResponse);
+        }
+        
         return ResponseEntity.ok(new PagedModel<>(resp));
     }
 

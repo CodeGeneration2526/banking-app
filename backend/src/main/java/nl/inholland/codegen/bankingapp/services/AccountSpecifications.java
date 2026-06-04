@@ -41,23 +41,25 @@ public final class AccountSpecifications {
         };
     }
 
-    public static Specification<Account> visibleTo(User user) {
+    public static Specification<Account> forEmployee() {
         return (root, query, cb) -> {
-            if (user.getRole() == User.Role.Employee) {
-                return cb.conjunction(); // no restriction
-            }
+            return cb.conjunction();
+        };
+    }
 
+    public static Specification<Account> forUserWithId(Long userId) {
+        return (root, query, cb) -> {
             Predicate checkingAccounts = cb.equal(root.get("accountType"), Account.AccountType.Checking);
 
             Predicate ownSavingsAccounts = cb.and(
                     cb.equal(root.get("accountType"), Account.AccountType.Savings),
-                    cb.equal(root.get("owner").get("id"), user.getUserId())
+                    cb.equal(root.get("owner").get("id"), userId)
             );
 
             return cb.or(checkingAccounts, ownSavingsAccounts);
         };
     }
-
+    
     public static Specification<Account> accountTypeEquals(Account.AccountType accountType) {
         return (root, query, cb) -> accountType == null
             ? cb.conjunction()
