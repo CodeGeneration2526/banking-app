@@ -45,6 +45,8 @@ const txAmountEuros = ref("");
 const txAmountFilter = ref<AmountFilter>("EqualTo");
 const dateFormat = new Intl.DateTimeFormat("en-NL", { dateStyle: "medium", timeStyle: "short" });
 
+const showUserInfo = ref(false);
+
 const currentUserId = computed(() => auth.currentUser?.userId ?? null);
 
 const senderIdentifier = computed(() => {
@@ -357,9 +359,14 @@ async function submitTransfer() {
             <a @click="showTransfer(account)" class="transfer-btn">Transfer</a>
         </article>
     </div>
-    <button class="secondary search-users-btn" @click="openUserSearch">
-        Search other users
-    </button>
+    <div style="display:flex;gap:0.25rem">
+        <button class="secondary search-users-btn" @click="openUserSearch">
+            Search other users
+        </button>
+        <button class="secondary search-users-btn" @click="showUserInfo = true">
+            View user info
+        </button>
+    </div>
 
     <section class="transactions-section">
         <div class="transactions-header">
@@ -616,13 +623,19 @@ async function submitTransfer() {
         </article>
     </dialog>
 
-    <h2>User info</h2>
-    First Name: {{ auth.currentUser?.firstName }} <br>
-    Last Name: {{ auth.currentUser?.lastName }} <br>
-    Email: {{ auth.currentUser?.email }} <br>
-    Phone Number: {{ auth.currentUser?.phoneNumber }} <br>
-    BSN: {{ auth.currentUser?.bsn }} <br>
-
+    <dialog :open="showUserInfo" class="chonky">
+        <article>
+            <header>
+                <button aria-label="Close" rel="prev" @click="showUserInfo = false"></button>
+                <p><strong>User info</strong></p>
+            </header>
+            First Name: {{ auth.currentUser?.firstName }} <br>
+            Last Name: {{ auth.currentUser?.lastName }} <br>
+            Email: {{ auth.currentUser?.email }} <br>
+            Phone Number: {{ auth.currentUser?.phoneNumber }} <br>
+            BSN: {{ auth.currentUser?.bsn }} <br>
+        </article>
+    </dialog>
 
     <dialog :open="successMessage !== ''" class="chonky">
         <article>

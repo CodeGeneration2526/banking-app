@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import org.springframework.data.jpa.domain.Specification;
 
 import nl.inholland.codegen.bankingapp.models.Transaction;
-import nl.inholland.codegen.bankingapp.services.TransactionSpecifications;
+import nl.inholland.codegen.bankingapp.specifications.TransactionSpecifications;
 
 public record TransactionFilter(
     LocalDate dateFrom,
