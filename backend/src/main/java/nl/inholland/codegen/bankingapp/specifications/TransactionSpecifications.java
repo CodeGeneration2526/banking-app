@@ -32,8 +32,8 @@ public final class TransactionSpecifications {
 
     public static Specification<Transaction> amountCompare(long amount, AmountFilter amountFilter) {
         return (root, query, cb) -> switch (amountFilter) {
-            case LessThan    -> cb.lessThan(root.get("amountInCents"), amount);
-            case EqualTo     -> cb.equal(root.get("amountInCents"), amount);
+            case LessThan -> cb.lessThan(root.get("amountInCents"), amount);
+            case EqualTo -> cb.equal(root.get("amountInCents"), amount);
             case GreaterThan -> cb.greaterThan(root.get("amountInCents"), amount);
         };
     }

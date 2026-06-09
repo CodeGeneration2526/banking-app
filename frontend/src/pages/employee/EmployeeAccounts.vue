@@ -199,7 +199,7 @@ async function toggleClosed() {
       <header>
         <button aria-label="Close" rel="prev" @click="closeEdit"></button>
         <p>
-          <strong>Edit {{ selected.ownerFirstName }} {{ selected.ownerLastName }} — {{ selected.accountType }}</strong>
+          <strong>Edit {{ selected.ownerFirstName }} {{ selected.ownerLastName }} - {{ selected.accountType }}</strong>
         </p>
       </header>
 
