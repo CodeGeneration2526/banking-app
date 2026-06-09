@@ -26,6 +26,7 @@ import nl.inholland.codegen.bankingapp.repositories.UserRepository;
 import nl.inholland.codegen.bankingapp.utils.IbanUtil;
 import nl.inholland.codegen.bankingapp.utils.JwtUtil;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -144,8 +145,8 @@ class TransactionControllerTest {
 
         Account sender   = accountRepository.findByAccountNumber(accAchecking1.getAccountNumber()).orElseThrow();
         Account receiver = accountRepository.findByAccountNumber(accAchecking2.getAccountNumber()).orElseThrow();
-        org.junit.jupiter.api.Assertions.assertEquals(75_000L, sender.getStoredAmountInCents());
-        org.junit.jupiter.api.Assertions.assertEquals(25_000L, receiver.getStoredAmountInCents());
+        assertEquals(75_000L, sender.getStoredAmountInCents());
+        assertEquals(25_000L, receiver.getStoredAmountInCents());
     }
 
     @Test
@@ -217,7 +218,7 @@ class TransactionControllerTest {
             .andExpect(jsonPath("$.message").value("Daily transfer limit exceeded"));
 
         Account sender = accountRepository.findByAccountNumber(accAchecking1.getAccountNumber()).orElseThrow();
-        org.junit.jupiter.api.Assertions.assertEquals(1_000_000L, sender.getStoredAmountInCents());
+        assertEquals(1_000_000L, sender.getStoredAmountInCents());
     }
 
     // --- GET /transactions ---
@@ -253,6 +254,6 @@ class TransactionControllerTest {
     @Test
     void getTransactions_returns403_whenNoAuthHeader() throws Exception {
         mockMvc.perform(get("/transactions"))
-            .andExpect(status().is(org.springframework.http.HttpStatus.FORBIDDEN.value()));
+            .andExpect(status().isForbidden());
     }
 }
